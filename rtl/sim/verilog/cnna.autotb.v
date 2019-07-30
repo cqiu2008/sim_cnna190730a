@@ -1508,8 +1508,10 @@ endtask
 // end
 
 initial begin
-    $helloword;
+    //$helloword;
+    //$fsdbDumpMDA(u0_asyn_fifo.mem,0,8);
     $fsdbDumpvars("+fsdbfile+tb_dut_top.fsdb");
+    $fsdbDumpMDA(AESL_inst_cnna.u_main_process.hcntInst[0].u_transform_hcnt.u_hcnt_div_rempart.S_body0,0,16);
     $fsdbDumpSVA;
 end
 endmodule

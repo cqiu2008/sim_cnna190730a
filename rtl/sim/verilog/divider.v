@@ -44,7 +44,7 @@ output      [        C_QUOTIENT-1:0]O_quotient      ,
 output      [       C_REMAINDER-1:0]O_remainder
 );
 
-function clogb2(input integer depth);
+function integer clogb2(input integer depth);
     begin
         for(clogb2=0;depth>0;clogb2=clogb2+1)begin
             depth = depth >> 1;
