@@ -59,8 +59,7 @@ wire [        C_DIVIDEND-1:0]S_quotient             ;
 wire [        C_DIVIDEND-1:0]S_remainder            ;
 reg  [      2*C_DIVIDEND-1:0]S_body0[0:C_DIVIDEND]  ;
 reg  [      2*C_DIVIDEND-1:0]S_body1[0:C_DIVIDEND]  ;
-wire [      2*C_DIVIDEND-1:0]S_case0[0:C_DIVIDEND]  ;
-wire [      2*C_DIVIDEND-1:0]S_case1[0:C_DIVIDEND]  ;
+wire [      2*C_DIVIDEND-1:0]S_case[0:C_DIVIDEND]   ;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // signal alignment
