@@ -1,0 +1,10 @@
+expand -t 4 AESL_axi_master_FIN_DDR.v       >  fk/AESL_axi_master_FIN_DDR.v       
+expand -t 4 AESL_axi_master_FOUT_DDR.v      >  fk/AESL_axi_master_FOUT_DDR.v          
+expand -t 4 AESL_axi_master_WEIGHTS_DDR.v   >  fk/AESL_axi_master_WEIGHTS_DDR.v   
+expand -t 4 AESL_axi_slave_axilite.v        >  fk/AESL_axi_slave_axilite.v        
+expand -t 4 cnna.autotb.v                   >  fk/cnna.autotb.v                   
+expand -t 4 cnna_axilite_s_axi.v            >  fk/cnna_axilite_s_axi.v            
+expand -t 4 cnna_FIN_DDR_m_axi.v            >  fk/cnna_FIN_DDR_m_axi.v            
+expand -t 4 cnna_FOUT_DDR_m_axi.v           >  fk/cnna_FOUT_DDR_m_axi.v           
+expand -t 4 cnna.v                          >  fk/cnna.v                          
+expand -t 4 cnna_WEIGHTS_DDR_m_axi.v        >  fk/cnna_WEIGHTS_DDR_m_axi.v           

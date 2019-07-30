@@ -1,0 +1,43 @@
+set depth_list {
+{WEIGHTS_DDR 2080}
+{FIN_DDR 2080}
+{FOUT_DDR 2080}
+{wddr_V 1}
+{fiddr_V 1}
+{foddr_V 1}
+{layer_enPara_cnvEn 1}
+{layer_enPara_poolEn 1}
+{layer_wParaNext_memAddrWeights_V 1}
+{layer_wParaNext_memAddrBias_V 1}
+{layer_iPara_width 1}
+{layer_iPara_height 1}
+{layer_iPara_ciAlign_V 1}
+{layer_iPara_ciGroup_V 1}
+{layer_iPara_memAddrImgIn_V 1}
+{layer_iParaNext_ci_V 1}
+{layer_oPara_width 1}
+{layer_oPara_height 1}
+{layer_oPara_co_V 1}
+{layer_oPara_coGroup_V 1}
+{layer_oPara_memAddrImgOut_V 1}
+{layer_oParaNext_co_V 1}
+{layer_cnvPara_relu 1}
+{layer_cnvPara_pad_h_V 1}
+{layer_cnvPara_pad_w_V 1}
+{layer_cnvPara_kernel_h_V 1}
+{layer_cnvPara_kernel_w_V 1}
+{layer_cnvPara_stride_h_V 1}
+{layer_cnvPara_stride_w_V 1}
+{layer_cnvParaNext_kernel_h_V 1}
+{layer_qPara_qM0 1}
+{layer_qPara_qN 1}
+{layer_qPara_qZ2 1}
+{layer_qPara_qZ3 1}
+{layer_poolPara_pad_h_V 1}
+{layer_poolPara_pad_w_V 1}
+{layer_poolPara_kernel_h_V 1}
+{layer_poolPara_kernel_w_V 1}
+{layer_poolPara_stride_h_V 1}
+{layer_poolPara_stride_w_V 1}
+}
+set trans_num 1

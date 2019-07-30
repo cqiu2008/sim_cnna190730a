@@ -1,0 +1,34 @@
+set nocompatible 		"关闭兼容模式
+syntax enable 			"语法高亮
+set nu				"设置行号 
+set showcmd			"显示命令
+set hlsearch			"高亮搜索
+set showmatch			"显示匹配的括号
+set noswapfile			"不是用swap文件
+set ai				"自动缩进
+set si				"智能缩进
+set cindent			"C/C++风格缩进
+"set gfn=Tlwg\Typist\16 colorshceme desert
+set guifont=DejaVu\ Sans\ mono\ 11	" ubuntu下设置字符间距	
+"set guifont=DejaVu_Sans_Mono:h11	" windows 下设置字符间距
+" tab转化为4个字符 Begin
+set ts=4
+set sw=4 
+" tab转化为4个字符 End
+set smarttab
+set shiftwidth=4
+set tabstop=4
+set background=dark
+" tab 替换成4个空格
+set et
+" tab 取消替换成4个空格
+"set et!
+colorscheme slate
+
+"set history=400  	" vim记住的历史操作的数量，默认的是20
+"set autoread     	" 当文件在外部被修改时，自动重新读取
+"set cindent shiftwidth=4
+"set autoindent shiftwidth=4 
+"set fileencodings=ucs-bom,utf-8,cp936
+"set fileencoding=utf-8
+"set encoding=cp936

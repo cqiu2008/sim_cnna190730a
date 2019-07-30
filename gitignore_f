@@ -1,0 +1,5 @@
+/runsim/
+!/runsim/makefile
+!/runsim/tc.cfg
+.vscode
+.gitignore

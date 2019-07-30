@@ -1,0 +1,42 @@
+@verdi rc file Version 1.0
+[General]
+VerdiVersion = Verdi3_I-2014.03-SP2
+[KeyNote]
+Line1 = Automatic Backup 0
+[TestBench]
+ConstrViewShow = 0
+InherViewShow = 0
+FSDBMsgShow = 0
+AnnotationShow = 0
+[hb]
+viewport = 260 90 1031 700 184 444 59 898
+activeNode = "loadweights"
+activeScope = "loadweights"
+activeFile = "/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v"
+interactiveMode = False
+viewType = Source
+simulatorMode = False
+sourceBeginLine = 332
+baMode = False
+srcLineNum = True
+syncSignal = False
+traceMode = Hierarchical
+showTraceInSchema = True
+paMode = False
+funcMode = False
+traceCrossHier = True
+DnDtraceCrossHierOnly = True
+traceIncTopPort = False
+leadingZero = False
+signalPane = False
+Scope1 = "loadweights"
+sdfCheckUndef = FALSE
+[hb.sourceTab.1]
+scope = loadweights
+File = /media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v
+Line = 333
+[imp.design1]
+dbEnum =  oh
+invokeDir = /media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip
+design = DebussyLib
+hostCommand = hostCommand /media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v

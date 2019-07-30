@@ -1,0 +1,183 @@
+*design* DebussyLib (btIdent Verdi3_I-2014.03-SP2)
+Command arguments:
+    +define+verilog
+    /media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v
+
+
+*Error* Syntax error at input
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 53: 
+
+*Warning* symbol S_peci_const duplicated
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 95: 
+
+*Warning* symbol S_next_co_group duplicated
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 96: 
+
+*Error* Syntax error at {
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 166: 
+
+*Error* Syntax error at {
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 177: 
+
+*Warning* symbol U0_next_co_group duplicated
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 182: 
+
+*Error* Syntax error at {
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 187: 
+
+*Error* Syntax error at {
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 197: 
+
+*Error* Syntax error at )
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 335: 
+
+*Error* Syntax error at endmodule
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 362: 
+
+*Error* C_FILTER_WIDTH is referenced before declaration
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 72: 
+
+*Error* C_FILTER_WIDTH is referenced before declaration
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 75: 
+
+*Error* C_FILTER_WIDTH is referenced before declaration
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 77: 
+
+*Error* C_FILTER_WIDTH is referenced before declaration
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 102: 
+
+*Error* C_FILTER_WIDTH is referenced before declaration
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 112: 
+
+*Error* C_FILTER_WIDTH is referenced before declaration
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 117: 
+
+*Error* C_FILTER_WIDTH is referenced before declaration
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 141: 
+
+*Error* C_FILTER_WIDTH is referenced before declaration
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 287: 
+
+*Error* unknown range declaration in S_next_filter
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 102: 
+
+*Error* unknown range declaration in S_next_filter_1d
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 112: 
+
+*Error* unknown range declaration in S_filter_cnt
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 117: 
+
+*Error* unknown range declaration in S_nd_cnt_filter
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 141: 
+
+*Error* nonconstant index
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 302: 
+
+*Error* nonconstant index
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 320: 
+Highest level modules:
+loadweights
+
+
+*Error* failed to find identifier C_M_AXI_LEN_WIDTH
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 58: 
+
+*Error* failed to find identifier C_DLY_WIDTH
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 80: 
+
+*Error* failed to find identifier C_DLY_WIDTH
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 81: 
+
+*Error* failed to find identifier C_DLY_WIDTH
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 82: 
+
+*Error* failed to find identifier C_DLY_WIDTH
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 83: 
+
+*Error* failed to find identifier C_DLY_WIDTH
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 84: 
+
+*Error* failed to find identifier C_DLY_WIDTH
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 85: 
+
+*Error* failed to find identifier C_DLY_WIDTH
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 86: 
+
+*Error* failed to find identifier C_DLY_WIDTH
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 87: 
+
+*Error* failed to find identifier C_DLY_WIDTH
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 88: 
+
+*Error* failed to find identifier C_M1_WIDTH
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 89: 
+
+*Error* failed to find identifier C_M2_WIDTH
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 90: 
+
+*Error* failed to find identifier C_M3_WIDTH
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 91: 
+
+*Error* failed to find identifier C_NCH_GROUP
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 93: 
+
+*Error* failed to find identifier C_NCH_GROUP
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 96: 
+
+*Error* failed to find identifier C_PECO_GROUP
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 98: 
+
+*Error* failed to find identifier C_NCH_GROUP
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 100: 
+
+*Error* failed to find identifier C_NCH_GROUP
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 106: 
+
+*Error* failed to find identifier C_PECO_GROUP
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 108: 
+
+*Error* failed to find identifier C_NCH_GROUP
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 110: 
+
+*Error* failed to find identifier C_K_BLK_ID_WIDTH
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 113: 
+
+*Error* failed to find identifier I_next_kernel
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 167: 
+
+*Error* failed to find identifier I_next_kernel
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 167: 
+
+*Error* failed to find identifier I_next_kernel
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 200: 
+
+*Error* failed to find identifier C_M_AXI_LEN_WIDTH
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 216: 
+
+*Error* failed to find identifier S_co_valid
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 297: 
+
+*Error* view ceil_power_of_2 is not defined for instance U0_next_co_group
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 172: 
+
+*Error* view ceil_power_of_2 is not defined for instance U0_next_ci_group
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 192: 
+
+*Error* view axvalid_ctrl is not defined for instance U0_arvalid
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 224: 
+
+*Error* view cm_cnt is not defined for instance U0_loop1_cog_cnt
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 255: 
+
+*Error* view cm_cnt is not defined for instance U0_loop2_ci_cnt
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 266: 
+
+*Error* view cm_cnt is not defined for instance U0_loop3_cig_cnt
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 277: 
+
+*Error* view cm_cnt is not defined for instance U0_loop4_filter_cnt
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 288: 
+
+*Error* view spram is not defined for instance u_wbuf
+"/media/cqiu/e/work/prj/AIPrj/sim/sim_cnna190717a/selfip/loadweights.v", 328: 
+Total	55 error(s),   3 warning(s)
