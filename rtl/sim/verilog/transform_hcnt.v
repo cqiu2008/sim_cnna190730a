@@ -35,14 +35,14 @@ parameter
     C_CNV_CH_WIDTH          = 8     , 
     C_CNV_K_WIDTH           = 5     
 )(
-input                              I_clk           ,
-input       [    C_CNV_K_WIDTH-1:0]I_kernel_h      ,
-input       [    C_CNV_K_WIDTH-1:0]I_stride_h      ,
-input       [    C_CNV_K_WIDTH-1:0]I_pad_h         ,
-input       [           C_DSIZE-1:0]I_hcnt         ,
-output reg  [           C_DSIZE-1:0]O_hfirst       ,
-output reg  [           C_DSIZE-1:0]O_kh           ,
-output reg  [           C_DSIZE-1:0]O_hindex        
+input                              I_clk            ,
+input       [    C_CNV_K_WIDTH-1:0]I_kernel_h       ,
+input       [    C_CNV_K_WIDTH-1:0]I_stride_h       ,
+input       [    C_CNV_K_WIDTH-1:0]I_pad_h          ,
+input       [          C_DSIZE-1:0]I_hcnt           ,
+output reg  [          C_DSIZE-1:0]O_hfirst         ,
+output reg  [          C_DSIZE-1:0]O_kh             ,
+output reg  [          C_DSIZE-1:0]O_hindex        
 );
 
 reg                         S_lessthan0                     ; 

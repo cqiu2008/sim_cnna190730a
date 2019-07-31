@@ -44,9 +44,12 @@ parameter
 // clk
 input                               I_clk               ,
 input       [       C_DIM_WIDTH-1:0]I_hcnt_total        ,
-output      [       C_DIM_WIDTH-1:0]O_hcnt              ,
+output reg  [       C_DIM_WIDTH-1:0]O_hcnt              ,
+output      [       C_DIM_WIDTH-1:0]O_hcnt_pre          ,
 input                               I_ap_start          ,
 output reg                          O_ap_done           ,
+output                              O_tcap_start        ,
+input                               I_tcap_done         ,
 output                              O_ldap_start        ,
 input                               I_ldap_done         ,
 output                              O_swap_start        ,
@@ -65,12 +68,14 @@ localparam   C_WO_GROUP       = C_DIM_WIDTH - C_POWER_OF_PEPIX + 1  ;
 localparam   C_CI_GROUP       = C_CNV_CH_WIDTH - C_POWER_OF_1ADOTS+1; 
 
 reg                                  S_ap_start_1d       ;
+wire                                 S_tcap_done_lck     ;
 wire                                 S_ldap_done_lck     ;
 wire                                 S_swap_done_lck     ;
 wire                                 S_peap_done_lck     ;
 wire                                 S_pqap_done_lck     ;
 wire                                 S_ppap_done_lck     ;
 wire                                 S_mpap_done_lck     ;   
+wire                                 S_done_lck          ;
 reg                                  S_all_done_lck      ;
 reg                                  S_all_done_lck_1d   ;
 reg                                  S_hcnt_valid        ;
@@ -78,10 +83,19 @@ wire                                 S_hcnt_overflag     ;
 reg                                  S_ap_done_1d        ;
 reg                                  S_ap_done_2d        ;
 reg                                  S_ap_start_pose     ;
+reg                                  S_tcap_start_pose   ;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // instance  
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+ap_start_ctrl u_tcap_start(
+    .I_clk           (I_clk             ),
+    .I_ap_start_en   (I_ap_start        ),
+    .I_ap_start_pose (S_tcap_start_pose ),
+    .I_ap_done       (I_tcap_done       ),
+    .O_ap_start      (O_tcap_start      )
+);
 
 ap_start_ctrl u_ldap_start(
     .I_clk           (I_clk             ),
@@ -129,6 +143,14 @@ ap_start_ctrl u_mpap_start(
     .I_ap_start_pose (S_ap_start_pose   ),
     .I_ap_done       (I_mpap_done       ),
     .O_ap_start      (O_mpap_start      )
+);
+
+ap_done_lck u_tcap_done_lck(
+    .I_clk          (I_clk               ),
+    .I_ap_start     (I_ap_start          ),
+    .I_ap_done      (I_tcap_done         ),
+    .I_ap_clear     (S_ap_start_pose     ),
+    .O_ap_done_lck  (S_tcap_done_lck     )  
 );
 
 ap_done_lck u_ldap_done_lck(
@@ -181,6 +203,9 @@ ap_done_lck u_mpap_done_lck(
     .O_ap_done_lck (S_mpap_done_lck      )     
 );
 
+assign S_done_lck = S_tcap_done_lck & 
+                    S_ldap_done_lck & 
+                    S_swap_done_lck ; 
 always @(posedge I_clk)begin
     //S_all_done_lck  <=  S_ldap_done_lck & 
     //                    S_swap_done_lck & 
@@ -188,9 +213,7 @@ always @(posedge I_clk)begin
     //                    S_pqap_done_lck & 
     //                    S_ppap_done_lck & 
     //                    S_mpap_done_lck ;
-    S_all_done_lck  <=  S_ldap_done_lck & 
-                        S_swap_done_lck ; 
-
+    S_all_done_lck  <= S_done_lck || (S_tcap_done_lck && (O_hcnt_pre=={(C_DIM_WIDTH){1'b0}})); 
     S_all_done_lck_1d <= S_all_done_lck ;
 end
 
@@ -204,9 +227,11 @@ always @(posedge I_clk)begin
 end
 
 always @(posedge I_clk)begin
-    S_ap_start_1d   <= I_ap_start                                       ;
-    S_ap_start_pose <= S_hcnt_valid || (I_ap_start && (!S_ap_start_1d)) ;
+    S_ap_start_1d       <= I_ap_start                                       ;
+    S_tcap_start_pose   <= S_hcnt_valid || (I_ap_start && (!S_ap_start_1d)) ;
+    S_ap_start_pose     <= S_hcnt_valid                                     ; 
 end
+
 cm_cnt #(
     .C_WIDTH(C_DIM_WIDTH))
 u0_hcnt(
@@ -216,8 +241,22 @@ u0_hcnt(
     .I_cnt_valid         (S_hcnt_valid      ),
     .I_cnt_upper         (I_hcnt_total      ),
     .O_over_flag         (S_hcnt_overflag   ),
-    .O_cnt               (O_hcnt            ) 
+    .O_cnt               (O_hcnt_pre        ) 
 );
+
+initial begin
+    O_hcnt = {(C_DIM_WIDTH){1'b0}}; 
+end
+
+always @(posedge I_clk)begin
+    if(S_hcnt_valid)begin
+        O_hcnt <= O_hcnt_pre    ;
+    end
+    else begin
+        O_hcnt <= O_hcnt        ; 
+    end
+
+end
 
 always @(posedge I_clk)begin
     S_ap_done_2d <= S_ap_done_1d    ;

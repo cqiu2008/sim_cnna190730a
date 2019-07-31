@@ -1509,9 +1509,14 @@ endtask
 
 initial begin
     //$helloword;
-    //$fsdbDumpMDA(u0_asyn_fifo.mem,0,8);
     $fsdbDumpvars("+fsdbfile+tb_dut_top.fsdb");
-    $fsdbDumpMDA(AESL_inst_cnna.u_main_process.hcntInst[0].u_transform_hcnt.u_hcnt_div_rempart.S_body0,0,16);
+    //$fsdbDumpMDA(AESL_inst_cnna.u_main_process.u_transform_hcnt_wrapper.hcntInst[0].u_transform_hcnt.u_hcnt_div_rempart.S_body0,0,16);
+
+    //$fsdbDumpMDA(apatb_cnna_top.AESL_inst_cnna.u_main_process.u_transform_hcnt_wrapper.hcntInst[0].u_transform_hcnt.u_hcnt_div_rempart.S_body0,0,18);
+    //$fsdbDumpMDA(,0,18);
+    $fsdbDumpMDA(apatb_cnna_top.AESL_inst_cnna.u_main_process.u_multi_slide_windows_flatten.u_wo_total.S_body0,0,18);
+    $fsdbDumpMDA(apatb_cnna_top.AESL_inst_cnna.u_main_process.u_multi_slide_windows_flatten.u_wo_total.S_case,0,17);
+    $fsdbDumpMDA(apatb_cnna_top.AESL_inst_cnna.u_main_process.u_multi_slide_windows_flatten.u_wo_total.S_body1,0,17);
     $fsdbDumpSVA;
 end
 endmodule

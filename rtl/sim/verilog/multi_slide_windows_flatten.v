@@ -105,7 +105,7 @@ reg  [       C_DIM_WIDTH-1:0]S_pesub1pix_stride_w_addkernel             ;
 wire [  C_WOT_DIV_RDBPIX-1:0]S_pesub1pix_stride_w_addkernel_div_rdb     ;
 reg  [       C_DIM_WIDTH-1:0]S_wo_total1                                ;
 reg  [       C_DIM_WIDTH-1:0]S_wo_total2                                ;
-reg  [       C_DIM_WIDTH-1:0]S_wo_total3                                ;
+wire [       C_DIM_WIDTH-1:0]S_wo_total3                                ;
 reg  [       C_DIM_WIDTH-1:0]S_wo_total                                 ;
 wire [   C_WOT_DIV_PEPIX-1:0]S_wot_div_pepix                            ;
 wire [  C_WOT_DIV_RDBPIX-1:0]S_wot_div_rdbpix                           ;
@@ -150,8 +150,8 @@ wire                         S_wog_over_flag                            ;
 reg  [         C_PADDING-1:0]S_padding_cnt                              ;
 reg  [       C_DIM_WIDTH-1:0]S_w                                        ;
 reg  [       C_DIM_WIDTH-1:0]S_wws[C_RDBPIX]                            ;
-reg  [       C_DIM_WIDTH-1:0]S_wws_divwpart[C_RDBPIX]                   ;
-reg  [       C_DIM_WIDTH-1:0]S_wws_remwpart[C_RDBPIX]                   ;
+wire [       C_DIM_WIDTH-1:0]S_wws_divwpart[C_RDBPIX]                   ;
+wire [       C_DIM_WIDTH-1:0]S_wws_remwpart[C_RDBPIX]                   ;
 reg  [       C_DIM_WIDTH-1:0]S_woc_rdbpix                               ;
 reg  [       C_DIM_WIDTH-1:0]S_wog_rdbpix                               ;
 reg  [       C_DIM_WIDTH-1:0]S_wog_pepix                                ;
@@ -171,21 +171,33 @@ reg                          S_wr1[C_RDBPIX][C_PEPIX]                  ;
 // initial variable
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+divider #(
+    .C_DIVIDEND   (C_DIM_WIDTH  ), 
+    .C_DIVISOR    (C_CNV_K_WIDTH),
+    .C_QUOTIENT   (C_DIM_WIDTH  ),
+    .C_REMAINDER  (C_DIM_WIDTH  ))
+u_wo_total(
+    .I_clk        (I_clk                    ),
+    .I_dividend   (S_wo_total2              ),
+    .I_divisor    (I_stride_w               ),
+    .O_quotient   (S_wo_total3              ), 
+    .O_remainder  ()
+);
+
 always @(posedge I_clk)begin
     S_pepix_stride_w                <= {I_stride_w[C_CNV_K_WIDTH-C_POWER_OF_PEPIX-1:0],{C_POWER_OF_PEPIX{1'b0}}};
     S_pesub1pix_stride_w            <= S_pepix_stride_w - I_stride_w                                            ; 
     S_pesub1pix_stride_w_addkernel  <= S_pesub1pix_stride_w + I_kernel_w                                        ;
     S_split_en                      <= ~(I_kernel_w < S_pepix_stride_w)                                         ;
-
     S_wo_total1                     <= I_ipara_width + {I_pad_w[C_CNV_K_WIDTH-1:0],1'b0}                        ;
     S_wo_total2                     <= S_wo_total1 - I_kernel_w                                                 ; 
-    S_wo_total3                     <= S_wo_total2 / I_stride_w                                                 ;////divtag
+    //S_wo_total3                     <= S_wo_total2 / I_stride_w                                               ;////divtag
     S_wo_total                      <= S_wo_total3 + 1                                                          ;
     S_wpart                         <= {{(C_DIM_WIDTH-C_CNV_K_WIDTH-C_POWER_OF_PEPIX){1'b0}},
                                         I_stride_w[C_CNV_K_WIDTH-1:0],{C_POWER_OF_PEPIX{1'b0}}}                 ;
-    S_woc_rdbpix                    <= {S_woc_cnt[C_DIM_WIDTH-1-C_POWER_OF_RDBPIX:0],{C_POWER_OF_RDBPIX{1'b0}}}     ;
-    S_wog_rdbpix                    <= {S_wog_cnt[C_DIM_WIDTH-1-C_POWER_OF_RDBPIX:0],{C_POWER_OF_RDBPIX{1'b0}}}     ;
-    S_wog_pepix                     <= {S_wog_cnt[C_DIM_WIDTH-1-C_POWER_OF_PEPIX:0] ,{C_POWER_OF_PEPIX{1'b0}}}      ;
+    S_woc_rdbpix                    <= {S_woc_cnt[C_DIM_WIDTH-1-C_POWER_OF_RDBPIX:0],{C_POWER_OF_RDBPIX{1'b0}}} ;
+    S_wog_rdbpix                    <= {S_wog_cnt[C_DIM_WIDTH-1-C_POWER_OF_RDBPIX:0],{C_POWER_OF_RDBPIX{1'b0}}} ;
+    S_wog_pepix                     <= {S_wog_cnt[C_DIM_WIDTH-1-C_POWER_OF_PEPIX:0] ,{C_POWER_OF_PEPIX{1'b0}}}  ;
     S_w                             <= S_split_en ? S_wog_pepix + S_woc_rdbpix  : S_wog_rdbpix + S_woc_rdbpix   ; 
     S_kernel_w_ci_group             <= I_kernel_w  * S_ci_group_1d                                              ; 
 end
@@ -315,10 +327,22 @@ genvar ws_idc;
 generate
     begin:ws_idc_cm
         for(ws_idc=0;ws_idc<C_RDBPIX;ws_idc=ws_idc+1)begin
+            divider #(
+                .C_DIVIDEND   (C_DIM_WIDTH  ), 
+                .C_DIVISOR    (C_DIM_WIDTH  ),
+                .C_QUOTIENT   (C_DIM_WIDTH  ),
+                .C_REMAINDER  (C_DIM_WIDTH  ))
+            u_wws(
+                .I_clk        (I_clk                    ),
+                .I_dividend   (S_wws[ws_idc]            ),
+                .I_divisor    (S_wpart                  ),
+                .O_quotient   (S_wws_divwpart[ws_idc]   ), 
+                .O_remainder  (S_wws_remwpart[ws_idc]   )
+            );
             always @(posedge I_clk)begin
                 S_wws[ws_idc]                   <= S_w + ws_idc                                     ;
-                S_wws_divwpart[ws_idc]          <= S_wws[ws_idc] / S_wpart                          ;//divtag
-                S_wws_remwpart[ws_idc]          <= S_wws[ws_idc] % S_wpart                          ;//divtag
+                //S_wws_divwpart[ws_idc]          <= S_wws[ws_idc] / S_wpart                          ;//divtag
+                //S_wws_remwpart[ws_idc]          <= S_wws[ws_idc] % S_wpart                          ;//divtag
                 S_id[ws_idc]                    <= S_split_en ? S_wog_cnt : S_wws_divwpart[ws_idc]  ;
                 S_windex[ws_idc]                <= $signed(S_wws[ws_idc] - I_pad_w)                 ;
                 S_wremainder[ws_idc]            <= S_wws_remwpart[ws_idc]                           ;

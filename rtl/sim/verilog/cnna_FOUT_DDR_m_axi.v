@@ -472,6 +472,9 @@ begin
     end
 end
 
+wire pout_equal0;
+assign pout_equal0 =  (pout == 1'b0);
+
 // data_vld
 always @(posedge sclk)
 begin
@@ -480,7 +483,8 @@ begin
     else if (sclk_en) begin
         if (push)
             data_vld <= 1'b1;
-        else if (~push && pop && pout == 1'b0)
+        //else if (~push && pop && pout == 1'b0)
+        else if (~push && pop && pout_equal0)
             data_vld <= 1'b0;
     end
 end

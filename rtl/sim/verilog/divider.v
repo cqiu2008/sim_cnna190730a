@@ -40,41 +40,45 @@ parameter
 input                               I_clk           ,
 input       [        C_DIVIDEND-1:0]I_dividend      ,
 input       [         C_DIVISOR-1:0]I_divisor       ,
-output      [        C_QUOTIENT-1:0]O_quotient      ,
+output      [        C_QUOTIENT-1:0]O_quotient      ,//After C_DIVIDEND+2 result
 output      [       C_REMAINDER-1:0]O_remainder
 );
 
-function integer clogb2(input integer depth);
-    begin
-        for(clogb2=0;depth>0;clogb2=clogb2+1)begin
-            depth = depth >> 1;
-        end
-    end
-endfunction
+//function integer clogb2(input integer depth);
+//    begin
+//        for(clogb2=0;depth>0;clogb2=clogb2+1)begin
+//            depth = depth >> 1;
+//        end
+//    end
+//endfunction
+//
+//localparam   C_CNT = clogb2(C_DIV); 
 
-localparam   C_CNT = clogb2(C_DIVIDEND); 
+parameter C_DIV = C_DIVIDEND    ;
+parameter C_DIS = C_DIVISOR     ;
+parameter C_DB  = 2 * C_DIV     ;
 
-wire [        C_DIVIDEND-1:0]S_divisor              ;
-wire [        C_DIVIDEND-1:0]S_quotient             ;
-wire [        C_DIVIDEND-1:0]S_remainder            ;
-reg  [      2*C_DIVIDEND-1:0]S_body0[0:C_DIVIDEND]  ;
-reg  [      2*C_DIVIDEND-1:0]S_body1[0:C_DIVIDEND]  ;
-wire [      2*C_DIVIDEND-1:0]S_case[0:C_DIVIDEND]   ;
+wire [        C_DIV-1:0]S_divisor             ;
+wire [        C_DIV-1:0]S_quotient            ;
+wire [        C_DIV-1:0]S_remainder           ;
+reg  [         C_DB-1:0]S_body0[0:C_DIV+2]    ;
+reg  [         C_DB-1:0]S_body1[0:C_DIV+1]    ;
+wire [         C_DB-1:0]S_case[0:C_DIV+1]     ;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // signal alignment
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 align #(
-    .C_IN_WIDTH (C_DIVISOR  ),
-    .C_OUT_WIDTH(C_DIVIDEND ))
+    .C_IN_WIDTH (C_DIS  ),
+    .C_OUT_WIDTH(C_DIV ))
 u_S_divisor(
     .I_din      (I_divisor),
     .O_dout     (S_divisor)
 );
 
 align #(
-    .C_IN_WIDTH (C_DIVIDEND ),
+    .C_IN_WIDTH (C_DIV      ),
     .C_OUT_WIDTH(C_QUOTIENT ))
 u_S_quotient(
     .I_din      (S_quotient),
@@ -82,7 +86,7 @@ u_S_quotient(
 );
 
 align #(
-    .C_IN_WIDTH (C_DIVIDEND ),
+    .C_IN_WIDTH (C_DIV      ),
     .C_OUT_WIDTH(C_REMAINDER))
 u_S_remainder(
     .I_din      (S_remainder),
@@ -93,27 +97,34 @@ u_S_remainder(
 // pipeline  
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-always @(posedge I_clk)begin
-    S_body0[0]   <= {{(C_DIVIDEND){1'b0}},I_dividend};
-    S_body1[0]   <= { S_divisor,{(C_DIVIDEND){1'b0}}};
+always @(posedge I_clk)begin:init
+    S_body0[0]   <= {{(C_DIV){1'b0}},I_dividend};
+    S_body1[0]   <= { S_divisor,{(C_DIV){1'b0}}};
 end
 
 genvar idx;
 
 generate
-    begin
-        for(idx=0;idx<C_DIVIDEND;idx=idx+1)begin:div_body
-            assign S_case[idx] = S_body0[idx]-S_body1[idx]+{{(C_DIVIDEND-1){1'b0}},1'b1};
+    begin:body
+        for(idx=0;idx<C_DIV;idx=idx+1)begin:num
+            assign S_case[idx] = S_body0[idx]-S_body1[idx]+{{(C_DB-1){1'b0}},1'b1};
             always @(posedge I_clk)begin
-                S_body0[idx+1]  <= (S_body0[idx] > S_body1[idx]) ? {S_case[idx][C_DIVIDEND-2:0],1'b0} : {S_body0[idx][C_DIVIDEND-2:0],1'b0} ;
+                S_body0[idx+1]  <= (S_body0[idx] >= S_body1[idx]) ? {S_case[idx][C_DB-2:0],1'b0} : {S_body0[idx][C_DB-2:0],1'b0} ;
                 S_body1[idx+1]  <=  S_body1[idx]; 
             end
         end
     end
 endgenerate
 
-assign S_remainder = S_body0[C_DIVIDEND][2*C_DIVIDEND-1:C_DIVIDEND];
-assign S_quotient  = S_body0[C_DIVIDEND][  C_DIVIDEND-1:         0];
+assign S_case[C_DIV] = S_body0[C_DIV]-S_body1[C_DIV]+{{(C_DB-1){1'b0}},1'b1};
+
+always @(posedge I_clk)begin:last
+    S_body0[C_DIV+1]  <= (S_body0[C_DIV] >= S_body1[C_DIV]) ? 
+                            {S_case[C_DIV][C_DB-2:0],1'b0} : S_body0[C_DIV];
+end
+
+assign S_remainder = S_body0[C_DIV+1][   C_DB-1:C_DIV];
+assign S_quotient  = S_body0[C_DIV+1][  C_DIV-1:    0];
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Naming specification                                                                         
@@ -130,3 +141,4 @@ assign S_quotient  = S_body0[C_DIVIDEND][  C_DIVIDEND-1:         0];
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 endmodule
+

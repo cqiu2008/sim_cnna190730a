@@ -93,6 +93,7 @@ localparam   C_WO_GROUP       = C_DIM_WIDTH - C_POWER_OF_PEPIX + 1  ;
 localparam   C_CI_GROUP       = C_CNV_CH_WIDTH - C_POWER_OF_1ADOTS+1; 
 
 wire         [       C_DIM_WIDTH-1:0]S_hcnt                         ;
+wire         [       C_DIM_WIDTH-1:0]S_hcnt_pre                     ;
 wire         [       C_DIM_WIDTH-1:0]S_hfirst[4]                    ;
 wire         [       C_DIM_WIDTH-1:0]S_kh[4]                        ;
 wire         [       C_DIM_WIDTH-1:0]S_hindex[4]                    ;
@@ -105,6 +106,8 @@ reg          [       C_DIM_WIDTH-1:0]S_hcnt_total_1t                ;
 reg          [       C_DIM_WIDTH-1:0]S_hcnt_total_2t                ; 
 reg          [       C_DIM_WIDTH-1:0]S_hcnt_total_3t                ; 
 reg          [       C_DIM_WIDTH-1:0]S_hcnt_total                   ; 
+wire                                 S_tcap_start                   ;
+wire                                 S_tcap_done                    ;
 wire                                 S_ldap_start                   ;
 wire                                 S_ldap_done                    ;
 wire                                 S_swap_start                   ;
@@ -127,26 +130,6 @@ wire         [C_RAM_DATA_WIDTH-1  :0]S_ibuf1_rdata                  ;
 // initial variable
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-genvar idx;
-generate
-    for(idx=0;idx<4;idx=idx+1)begin:hcntInst
-        transform_hcnt #(
-            .C_DSIZE         (C_DIM_WIDTH                   ), 
-            .C_CNV_CH_WIDTH  (C_CNV_CH_WIDTH                ),
-            .C_CNV_K_WIDTH   (C_CNV_K_WIDTH                 ))
-        u_transform_hcnt(
-            .I_clk           (I_clk                         ),
-            .I_kernel_h      (I_kernel_h                    ),
-            .I_stride_h      (I_stride_h                    ),
-            .I_pad_h         (I_pad_h                       ),
-            .I_hcnt          ((S_hcnt-idx[C_DIM_WIDTH-1:0]) ),
-            .O_hfirst        (S_hfirst[idx]                 ),
-            .O_kh            (S_kh[idx]                     ),
-            .O_hindex        (S_hindex[idx]                 )
-        );
-    end
-endgenerate
-
 ceil_power_of_2 #(
     .C_DIN_WIDTH    (C_CNV_CH_WIDTH     ),
     .C_POWER2_NUM   (C_POWER_OF_1ADOTS  ))
@@ -159,7 +142,7 @@ always @(posedge I_clk)begin
     S_ipara_ci_group_1d <= S_ipara_ci_group                     ;
     S_line_width_div16  <= S_ipara_ci_group_1d * I_ipara_width  ; 
     S_hcnt_total_1t     <= I_opara_height * I_kernel_h          ;
-    S_hcnt_total_2t     <= 2 + I_kernel_h                       ; 
+    S_hcnt_total_2t     <= 3 + I_kernel_h                       ; 
     S_hcnt_total_3t     <= S_hcnt_total_1t + S_hcnt_total_2t    ; 
     S_hcnt_total        <= S_hcnt_total_3t                      ;
 end
@@ -181,9 +164,12 @@ main_cnt_ctrl #(
 u0_main_cnt_ctrl (
     .I_clk              (I_clk              ),
     .I_hcnt_total       (S_hcnt_total       ),
+    .O_hcnt_pre         (S_hcnt_pre         ),
     .O_hcnt             (S_hcnt             ),
     .I_ap_start         (I_ap_start         ),
     .O_ap_done          (O_ap_done          ),
+    .O_tcap_start       (S_tcap_start       ),
+    .I_tcap_done        (S_tcap_done        ),
     .O_ldap_start       (S_ldap_start       ),
     .I_ldap_done        (S_ldap_done        ),
     .O_swap_start       (S_swap_start       ),
@@ -197,6 +183,38 @@ u0_main_cnt_ctrl (
     .O_mpap_start       (S_mpap_start       ),
     .I_mpap_done        (S_mpap_done        )    
 );
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// transform_hcnt_wrapper 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+transform_hcnt_wrapper #(
+    .C_DSIZE           (C_DIM_WIDTH         ),
+    .C_CNV_CH_WIDTH    (C_CNV_CH_WIDTH      ), 
+    .C_CNV_K_WIDTH     (C_CNV_K_WIDTH       ))
+u_transform_hcnt_wrapper(
+    .I_clk              (I_clk                 ),
+    .I_allap_start      (I_ap_start            ),
+    .I_ap_start         (S_tcap_start          ),
+    .O_ap_done          (S_tcap_done           ),
+    .I_kernel_h         (I_kernel_h            ),
+    .I_stride_h         (I_stride_h            ),
+    .I_pad_h            (I_pad_h               ),
+    .I_hcnt             (S_hcnt_pre            ),
+    .O_r0hfirst         (S_hfirst[0]           ),
+    .O_r0kh             (S_kh[0]               ),
+    .O_r0hindex         (S_hindex[0]           ),                
+    .O_r1hfirst         (S_hfirst[1]           ),              
+    .O_r1kh             (S_kh[1]               ),                  
+    .O_r1hindex         (S_hindex[1]           ),               
+    .O_r2hfirst         (S_hfirst[2]           ),              
+    .O_r2kh             (S_kh[2]               ),                  
+    .O_r2hindex         (S_hindex[2]           ),               
+    .O_r3hfirst         (S_hfirst[3]           ),              
+    .O_r3kh             (S_kh[3]               ),                  
+    .O_r3hindex         (S_hindex[3]           )
+);
+    
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // load_image  
@@ -229,7 +247,7 @@ u0_load_image(
     .O_ap_done            (S_ldap_done           ),
     .I_ipara_height       (I_ipara_height        ),
     .I_hindex             (S_hindex[0]           ),
-    .I_hcnt_odd           (S_hcnt[0]             ),
+    .I_hcnt_odd           (S_hcnt[0]             ),//1,3,5,...active
     .I_line_width_div16   (S_line_width_div16    ),
     .I_raddr0             (S_ibuf0_addr          ), 
     .I_raddr1             (S_ibuf1_addr          ), 
