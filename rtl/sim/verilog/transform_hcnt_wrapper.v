@@ -38,7 +38,7 @@ parameter
 input                              I_clk            ,
 input                              I_allap_start    ,
 input                              I_ap_start       ,
-output reg                         O_ap_done        ,
+output reg                         O_ap_done        ,//dly=26
 input       [    C_CNV_K_WIDTH-1:0]I_kernel_h       ,
 input       [    C_CNV_K_WIDTH-1:0]I_stride_h       ,
 input       [    C_CNV_K_WIDTH-1:0]I_pad_h          ,
@@ -66,6 +66,7 @@ wire   [       C_DSIZE-1:0]S_kh[4]              ;
 wire   [       C_DSIZE-1:0]S_hindex[4]          ;
 wire                       S_ndap_start         ;
 reg    [               3:0]S_ndap_start_shift   ;
+reg                        S_ap_start_1d        ; 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Calcuate the variable  
@@ -77,7 +78,7 @@ generate
             .C_DSIZE         (C_DSIZE                               ), 
             .C_CNV_CH_WIDTH  (C_CNV_CH_WIDTH                        ),
             .C_CNV_K_WIDTH   (C_CNV_K_WIDTH                         ))
-        u_transform_hcnt(
+        u_transform_hcnt(//dly=23
             .I_clk           (I_clk                                 ),
             .I_kernel_h      (I_kernel_h                            ),
             .I_stride_h      (I_stride_h                            ),
@@ -120,7 +121,7 @@ endgenerate
 
 dly #(
     .C_DATA_WIDTH   (1          ), 
-    .C_DLY_NUM      (20         ))
+    .C_DLY_NUM      (21         ))
 u_done_dly(
     .I_clk     (I_clk           ),
     .I_din     (I_ap_start      ),
@@ -128,7 +129,8 @@ u_done_dly(
 );
 
 always @(posedge I_clk)begin
-    S_ndap_start_shift <= {S_ndap_start_shift[2:0],S_ndap_start };
+    S_ndap_start_shift <= {S_ndap_start_shift[2:0],S_ndap_start }   ;
+    S_ap_start_1d      <= I_ap_start                                ; 
 end
 
 always @(posedge I_clk)begin
@@ -136,23 +138,23 @@ always @(posedge I_clk)begin
 end
 
 initial begin
-    O_r0hfirst     = {C_DSIZE{1'b0}};
-    O_r0kh         = {C_DSIZE{1'b0}};
-    O_r0hindex     = {C_DSIZE{1'b0}};  
-    O_r1hfirst     = {C_DSIZE{1'b0}};
-    O_r1kh         = {C_DSIZE{1'b0}};
-    O_r1hindex     = {C_DSIZE{1'b0}};  
-    O_r2hfirst     = {C_DSIZE{1'b0}};
-    O_r2kh         = {C_DSIZE{1'b0}};
-    O_r2hindex     = {C_DSIZE{1'b0}};  
-    O_r3hfirst     = {C_DSIZE{1'b0}};
-    O_r3kh         = {C_DSIZE{1'b0}};
-    O_r3hindex     = {C_DSIZE{1'b0}};  
+    O_r0hfirst     = {C_DSIZE{1'b1}};
+    O_r0kh         = {C_DSIZE{1'b1}};
+    O_r0hindex     = {C_DSIZE{1'b1}};  
+    O_r1hfirst     = {C_DSIZE{1'b1}};
+    O_r1kh         = {C_DSIZE{1'b1}};
+    O_r1hindex     = {C_DSIZE{1'b1}};  
+    O_r2hfirst     = {C_DSIZE{1'b1}};
+    O_r2kh         = {C_DSIZE{1'b1}};
+    O_r2hindex     = {C_DSIZE{1'b1}};  
+    O_r3hfirst     = {C_DSIZE{1'b1}};
+    O_r3kh         = {C_DSIZE{1'b1}};
+    O_r3hindex     = {C_DSIZE{1'b1}};  
 end
 
 always @(posedge I_clk)begin
     if(I_allap_start)begin
-        if( (I_hcnt[0]) && (S_ndap_start_shift[2:1]==2'b01) )begin
+        if( (I_hcnt[0]) && (~S_ap_start_1d) && I_ap_start )begin
             O_r0hfirst     <= S_reg_hfirst[0][0];
             O_r0kh         <= S_reg_kh[0][0]    ;
             O_r0hindex     <= S_reg_hindex[0][0];  
@@ -166,7 +168,7 @@ always @(posedge I_clk)begin
             O_r3kh         <= S_reg_kh[0][3]    ;
             O_r3hindex     <= S_reg_hindex[0][3];  
         end
-        else if( (!I_hcnt[0]) && (S_ndap_start_shift[2:1]==2'b01) && (I_hcnt != {C_DSIZE{1'b0}}) )begin
+        else if( (!I_hcnt[0]) && (~S_ap_start_1d) && I_ap_start && (I_hcnt != {C_DSIZE{1'b0}}) )begin
             O_r0hfirst     <= S_reg_hfirst[1][0];
             O_r0kh         <= S_reg_kh[1][0]    ;
             O_r0hindex     <= S_reg_hindex[1][0];  
@@ -196,18 +198,18 @@ always @(posedge I_clk)begin
         end
     end
     else begin
-            O_r0hfirst     <= {C_DSIZE{1'b0}};
-            O_r0kh         <= {C_DSIZE{1'b0}};
-            O_r0hindex     <= {C_DSIZE{1'b0}};  
-            O_r1hfirst     <= {C_DSIZE{1'b0}};
-            O_r1kh         <= {C_DSIZE{1'b0}};
-            O_r1hindex     <= {C_DSIZE{1'b0}};  
-            O_r2hfirst     <= {C_DSIZE{1'b0}};
-            O_r2kh         <= {C_DSIZE{1'b0}};
-            O_r2hindex     <= {C_DSIZE{1'b0}};  
-            O_r3hfirst     <= {C_DSIZE{1'b0}};
-            O_r3kh         <= {C_DSIZE{1'b0}};
-            O_r3hindex     <= {C_DSIZE{1'b0}};  
+            O_r0hfirst     <= {C_DSIZE{1'b1}};
+            O_r0kh         <= {C_DSIZE{1'b1}};
+            O_r0hindex     <= {C_DSIZE{1'b1}};  
+            O_r1hfirst     <= {C_DSIZE{1'b1}};
+            O_r1kh         <= {C_DSIZE{1'b1}};
+            O_r1hindex     <= {C_DSIZE{1'b1}};  
+            O_r2hfirst     <= {C_DSIZE{1'b1}};
+            O_r2kh         <= {C_DSIZE{1'b1}};
+            O_r2hindex     <= {C_DSIZE{1'b1}};  
+            O_r3hfirst     <= {C_DSIZE{1'b1}};
+            O_r3kh         <= {C_DSIZE{1'b1}};
+            O_r3hindex     <= {C_DSIZE{1'b1}};  
     end
 end
 

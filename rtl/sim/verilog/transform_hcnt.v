@@ -40,7 +40,7 @@ input       [    C_CNV_K_WIDTH-1:0]I_kernel_h       ,
 input       [    C_CNV_K_WIDTH-1:0]I_stride_h       ,
 input       [    C_CNV_K_WIDTH-1:0]I_pad_h          ,
 input       [          C_DSIZE-1:0]I_hcnt           ,
-output reg  [          C_DSIZE-1:0]O_hfirst         ,
+output reg  [          C_DSIZE-1:0]O_hfirst         ,////dly=23
 output reg  [          C_DSIZE-1:0]O_kh             ,
 output reg  [          C_DSIZE-1:0]O_hindex        
 );
@@ -62,7 +62,7 @@ divider #(
     .C_DIVISOR    (C_CNV_K_WIDTH),
     .C_QUOTIENT   (C_DSIZE      ),
     .C_REMAINDER  (C_DSIZE      ))
-u_hcnt_div_rempart(
+u_hcnt_div_rempart(//dly=C_DSIZE+2=18
     .I_clk        (I_clk                    ),
     .I_dividend   (I_hcnt                   ),
     .I_divisor    (I_kernel_h               ),
