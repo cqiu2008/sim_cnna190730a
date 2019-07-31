@@ -64,6 +64,7 @@ wire [        C_DIV-1:0]S_remainder           ;
 reg  [         C_DB-1:0]S_body0[0:C_DIV+2]    ;
 reg  [         C_DB-1:0]S_body1[0:C_DIV+1]    ;
 wire [         C_DB-1:0]S_case[0:C_DIV+1]     ;
+wire                    S_more[0:C_DIV+1]     ;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // signal alignment
@@ -107,20 +108,21 @@ genvar idx;
 generate
     begin:body
         for(idx=0;idx<C_DIV;idx=idx+1)begin:num
-            assign S_case[idx] = S_body0[idx]-S_body1[idx]+{{(C_DB-1){1'b0}},1'b1};
+            assign S_case[idx] = S_body0[idx]-S_body1[idx]              ;
+            assign S_more[idx] = S_body0[idx]>=S_body1[idx]             ;
             always @(posedge I_clk)begin
-                S_body0[idx+1]  <= (S_body0[idx] >= S_body1[idx]) ? {S_case[idx][C_DB-2:0],1'b0} : {S_body0[idx][C_DB-2:0],1'b0} ;
+                S_body0[idx+1]  <= S_more[idx] ? {S_case[idx][C_DB-2:0],1'b1} : {S_body0[idx][C_DB-2:0],1'b0} ;
                 S_body1[idx+1]  <=  S_body1[idx]; 
             end
         end
     end
 endgenerate
 
-assign S_case[C_DIV] = S_body0[C_DIV]-S_body1[C_DIV]+{{(C_DB-1){1'b0}},1'b1};
+assign S_case[C_DIV] = S_body0[C_DIV]-S_body1[C_DIV]    ;
+assign S_more[C_DIV] = S_body0[C_DIV]>=S_body1[C_DIV]   ;
 
 always @(posedge I_clk)begin:last
-    S_body0[C_DIV+1]  <= (S_body0[C_DIV] >= S_body1[C_DIV]) ? 
-                            {S_case[C_DIV][C_DB-2:0],1'b0} : S_body0[C_DIV];
+    S_body0[C_DIV+1]  <= S_more[C_DIV] ? {S_case[C_DIV][C_DB-2:0],1'b1} : S_body0[C_DIV];
 end
 
 assign S_remainder = S_body0[C_DIV+1][   C_DB-1:C_DIV];
