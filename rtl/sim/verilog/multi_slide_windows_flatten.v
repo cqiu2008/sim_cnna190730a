@@ -458,23 +458,12 @@ U0_loop3_wog_cnt(
 .O_cnt              (SC_wog_cnt             )
 );
 
+
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// calculate variable
+// calculate dly variable
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// calculate SC_w
-assign SC_woc_rdbpix        = {SC_woc_cnt[C_DIM_WIDTH-1-C_POWER_OF_RDBPIX:0],{C_POWER_OF_RDBPIX{1'b0}}}     ;
-assign SC_wog_rdbpix        = {SC_wog_cnt[C_DIM_WIDTH-1-C_POWER_OF_RDBPIX:0],{C_POWER_OF_RDBPIX{1'b0}}}     ;
-assign SC_wog_pepix         = {SC_wog_cnt[C_DIM_WIDTH-1-C_POWER_OF_PEPIX:0] ,{C_POWER_OF_PEPIX{1'b0}}}      ;
-assign SC_wog_pe_or_rdb_pix =  SL_split_en ? SC_wog_pepix : SC_wog_rdbpix                                   ; 
-
-always @(posedge I_clk)begin
-    SC_w  <= SC_wog_pe_or_rdb_pix + SC_woc_rdbpix   ;//dly=1 
-end
-
-// calculate SC_id 
-// calculate SC_windex
-// calculate SC_wremainder
 dly #(
     .C_DATA_WIDTH   (C_DIM_WIDTH    ), 
     .C_DLY_NUM      (20             ))
@@ -501,7 +490,77 @@ u_n1dcig(
     .I_din          (SC_ndcig_cnt           ),
     .O_dout         (SC_n1dcig_cnt          ) //dly=24
 );
+genvar ws_idd;
+generate
+    begin:ws_idd_cm
+        for(ws_idd=0;ws_idd<C_RDBPIX;ws_idd=ws_idd+1)begin
 
+            dly #(
+                .C_DATA_WIDTH   (C_DIM_WIDTH        ), 
+                .C_DLY_NUM      (20                 ))
+            u_ndwws(
+                .I_clk          (I_clk              ),
+                .I_din          (SC_wws[ws_idd]     ),
+                .O_dout         (SC_ndwws[ws_idd]   ) //dly=20
+            );
+
+            dly #(
+                .C_DATA_WIDTH   (C_DIM_WIDTH        ), 
+                .C_DLY_NUM      (4                 ))
+            u_n1dwws(
+                .I_clk          (I_clk              ),
+                .I_din          (SC_ndwws[ws_idd]   ),
+                .O_dout         (SC_n1dwws[ws_idd]  ) //dly=24
+            );
+
+            dly #(
+                .C_DATA_WIDTH   (C_DIM_WIDTH        ), 
+                .C_DLY_NUM      (1                  ))
+            u_ndid(
+                .I_clk          (I_clk              ),
+                .I_din          (SC_id[ws_idd]      ),
+                .O_dout         (SC_ndid[ws_idd]    )
+            );
+
+            dly #(
+                .C_DATA_WIDTH   (C_DIM_WIDTH            ), 
+                .C_DLY_NUM      (5                      ))
+            u_nd_windex(
+                .I_clk          (I_clk                  ),
+                .I_din          (SC_windex[ws_idd]      ),//dly=21
+                .O_dout         (SC_ndwindex[ws_idd]    ) //dly=26
+            );
+
+            dly #(
+                .C_DATA_WIDTH   (C_RAM_DATA_WIDTH       ), 
+                .C_DLY_NUM      (2                      ))
+            u_nd_ibuf_rdata(
+                .I_clk          (I_clk                  ),
+                .I_din          (SC_ibuf_rdata[ws_idd]  ),//dly=26
+                .O_dout         (SC_ndibuf_rdata[ws_idd]) //dly=28
+            );
+        end
+    end
+endgenerate
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// calculate variable
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// calculate SC_w
+assign SC_woc_rdbpix        = {SC_woc_cnt[C_DIM_WIDTH-1-C_POWER_OF_RDBPIX:0],{C_POWER_OF_RDBPIX{1'b0}}}     ;
+assign SC_wog_rdbpix        = {SC_wog_cnt[C_DIM_WIDTH-1-C_POWER_OF_RDBPIX:0],{C_POWER_OF_RDBPIX{1'b0}}}     ;
+assign SC_wog_pepix         = {SC_wog_cnt[C_DIM_WIDTH-1-C_POWER_OF_PEPIX:0] ,{C_POWER_OF_PEPIX{1'b0}}}      ;
+assign SC_wog_pe_or_rdb_pix =  SL_split_en ? SC_wog_pepix : SC_wog_rdbpix                                   ; 
+
+always @(posedge I_clk)begin
+    SC_w  <= SC_wog_pe_or_rdb_pix + SC_woc_rdbpix   ;//dly=1 
+end
+
+// calculate SC_id 
+// calculate SC_windex
+// calculate SC_wremainder
+//calculate SC_ibufaddr
 genvar ws_idc;
 generate
     begin:ws_idc_cm
@@ -526,51 +585,14 @@ generate
                 SC_windex[ws_idc]          <= $signed(SC_ndwws[ws_idc]) - $signed(I_pad_w)          ;//dly=21
                 SC_wremainder[ws_idc]      <= SC_wws_remwpart[ws_idc]                               ;
             end
-            dly #(
-                .C_DATA_WIDTH   (C_DIM_WIDTH        ), 
-                .C_DLY_NUM      (20                 ))
-            u_ndwws(
-                .I_clk          (I_clk              ),
-                .I_din          (SC_wws[ws_idc]     ),
-                .O_dout         (SC_ndwws[ws_idc]   ) //dly=20
-            );
-            dly #(
-                .C_DATA_WIDTH   (C_DIM_WIDTH        ), 
-                .C_DLY_NUM      (4                 ))
-            u_n1dwws(
-                .I_clk          (I_clk              ),
-                .I_din          (SC_ndwws[ws_idc]   ),
-                .O_dout         (SC_n1dwws[ws_idc]  ) //dly=24
-            );
-            dly #(
-                .C_DATA_WIDTH   (C_DIM_WIDTH        ), 
-                .C_DLY_NUM      (1                  ))
-            u_ndid(
-                .I_clk          (I_clk              ),
-                .I_din          (SC_id[ws_idc]      ),
-                .O_dout         (SC_ndid[ws_idc]    )
-            );
-            dly #(
-                .C_DATA_WIDTH   (C_DIM_WIDTH            ), 
-                .C_DLY_NUM      (5                      ))
-            u_nd_windex(
-                .I_clk          (I_clk                  ),
-                .I_din          (SC_windex[ws_idc]      ),//dly=21
-                .O_dout         (SC_ndwindex[ws_idc]    ) //dly=26
-            );
-
-            dly #(
-                .C_DATA_WIDTH   (C_RAM_DATA_WIDTH       ), 
-                .C_DLY_NUM      (2                      ))
-            u_nd_ibuf_rdata(
-                .I_clk          (I_clk                  ),
-                .I_din          (SC_ibuf_rdata[ws_idc]  ),//dly=26
-                .O_dout         (SC_ndibuf_rdata[ws_idc]) //dly=28
-            );
+            //calculate SC_ibufaddr
+            always @(posedge I_clk)begin
+                SC_ibufaddr_t1[ws_idc] <= SC_windex[ws_idc] * SL_ci_group_1d                        ;//dly=22
+                SC_ibufaddr[ws_idc]    <= SC_ibufaddr_t1[ws_idc] + SC_ndcig_cnt                     ;//dly=23 
+            end
         end
     end
 endgenerate
-
 
 // calculate SC_id 
 genvar ws_idx;
@@ -578,6 +600,62 @@ genvar p_idx;
 generate
     begin:ws_p_idx
         for(p_idx=0;p_idx<C_PEPIX;p_idx=p_idx+1)begin:p_idx
+            //main loop unroll
+            for(ws_idx=0;ws_idx<C_RDBPIX;ws_idx=ws_idx+1)begin:ws_idx
+                //calculate SC_idforpix
+                always @(posedge I_clk)begin
+                    SC_id_more0[ws_idx]           <= $signed(SC_id[ws_idx]) > 0                                     ;//dly=22
+                    S_rem_less_thr[ws_idx][p_idx] <= $signed(SC_wremainder[ws_idx]) < $signed(SL_wthreshold[p_idx]) ;//dly=22 
+                end
+                always @(posedge I_clk)begin
+                    if(SC_id_more0[ws_idx] && S_rem_less_thr[ws_idx][p_idx] && (!SL_split_en))begin
+                        SC_idforpix[ws_idx][p_idx] <= $signed(SC_ndid[ws_idx])-$signed(1);//dly=23
+                    end
+                    else begin
+                        SC_idforpix[ws_idx][p_idx] <= $signed(SC_ndid[ws_idx]);
+                    end
+                end
+                //calculate SC_pfirst
+                //calculate SC_k 
+                always @(posedge I_clk)begin
+                    SC_pfirst[ws_idx][p_idx] <= SC_idforpix[ws_idx][p_idx] * SL_wpart                           ;//dly=24
+                    SC_k_t1[ws_idx][p_idx]   <= $signed(SC_n1dwws[ws_idx]) - $signed(SC_pfirst[ws_idx][p_idx])  ;//dly=25
+                    SC_k[ws_idx][p_idx]      <= $signed(SC_k_t1[ws_idx][p_idx])-$signed(SL_p_stride_w[p_idx])   ;//dly=26
+                end
+                //calculate SC_depth
+                always @(posedge I_clk)begin
+                    SC_depth_t1[ws_idx][p_idx]  <= SC_idforpix[ws_idx][p_idx] * SL_kernel_w_ci_group        ;//dly=24
+                    SC_depth_t2[ws_idx][p_idx]  <= SC_depth_t1[ws_idx][p_idx] + SC_n1dcig_cnt               ;//dly=25 
+                    SC_depth_t2a[ws_idx][p_idx] <= SC_depth_t2[ws_idx][p_idx]                               ;//dly=26 
+                    SC_depth_t2b[ws_idx][p_idx] <= SC_depth_t2a[ws_idx][p_idx]                              ;//dly=27 
+                    SC_depth_t3[ws_idx][p_idx]  <= SC_k[ws_idx][p_idx] * SL_ci_group_1d                     ;//dly=27 
+                    SC_depth[ws_idx][p_idx]     <= SC_depth_t3[ws_idx][p_idx] + SC_depth_t2b[ws_idx][p_idx] ;//dly=28
+                end
+                //calculate SC_wr0,SC_wr1
+                always @(posedge I_clk)begin
+                    SC_wr0[ws_idx][p_idx]  <= SR_sbuf0_en && SC_k_suite[ws_idx][p_idx]   ;//dly=29
+                    SC_wr1[ws_idx][p_idx]  <= SR_sbuf1_en && SC_k_suite[ws_idx][p_idx]   ;
+                end
+
+                suite_range #(
+                    .C_DIM_WIDTH (C_CNV_K_WIDTH))
+                u_k_suite_range(
+                    .I_clk          (I_clk                      ),
+                    .I_index        (SC_k[ws_idx][p_idx]        ),//dly=26
+                    .I_index_upper  (I_kernel_w                 ),
+                    .O_index_suite  (SC_k_suite[ws_idx][p_idx]  ) //dly=28
+                );
+
+                suite_range #(
+                    .C_DIM_WIDTH (C_DIM_WIDTH))
+                u_windex_suite_range(
+                    .I_clk          (I_clk                                            ),
+                    .I_index        (SC_ndwindex[ws_idx]                              ),//dly=26
+                    .I_index_upper  ({{(C_DIM_WIDTH-C_CNV_K_WIDTH){1'b0}},I_kernel_w} ),
+                    .O_index_suite  (SC_windex_suite[ws_idx][p_idx]                   ) //dly=28
+                );
+
+            end //ws_idx
             //calculate SL_wthreshold
             always @(posedge I_clk)begin
                 SL_p_stride_w[p_idx]    <= p_idx * I_stride_w                                                               ;
@@ -590,10 +668,10 @@ generate
                 SC_addr0[1][p_idx] <= SR_sbuf0_en               ? SC_depth[1][p_idx] : I_raddr1  ; 
                 SC_addr1[0][p_idx] <= SR_sbuf1_en               ? SC_depth[0][p_idx] : I_raddr0  ;
                 SC_addr1[1][p_idx] <= SR_sbuf1_en               ? SC_depth[1][p_idx] : I_raddr1  ;
-                SC_wdata0[0]      <= SC_windex_suite[0][p_idx] ? SC_ndibuf_rdata[0] : 0         ;//dly=29
-                SC_wdata0[1]      <= SC_windex_suite[1][p_idx] ? SC_ndibuf_rdata[1] : 0         ;
-                SC_wdata1[0]      <= SC_windex_suite[0][p_idx] ? SC_ndibuf_rdata[0] : 0         ;
-                SC_wdata1[1]      <= SC_windex_suite[1][p_idx] ? SC_ndibuf_rdata[1] : 0         ;
+                SC_wdata0[0]       <= SC_windex_suite[0][p_idx] ? SC_ndibuf_rdata[0] : 0         ;//dly=29
+                SC_wdata0[1]       <= SC_windex_suite[1][p_idx] ? SC_ndibuf_rdata[1] : 0         ;
+                SC_wdata1[0]       <= SC_windex_suite[0][p_idx] ? SC_ndibuf_rdata[0] : 0         ;
+                SC_wdata1[1]       <= SC_windex_suite[1][p_idx] ? SC_ndibuf_rdata[1] : 0         ;
             end
             dpram #(
                 .MEM_STYLE  (C_MEM_STYLE                ),//"distributed"
@@ -631,69 +709,6 @@ generate
                 .I_wr1      (SC_wr1[1][p_idx]           ),
                 .O_rdata1   (S_rdata1[1][p_idx]         )
             );
-            //main loop unroll
-            for(ws_idx=0;ws_idx<C_RDBPIX;ws_idx=ws_idx+1)begin:ws_idx
-                //calculate SC_ibufaddr
-                always @(posedge I_clk)begin
-                    SC_ibufaddr_t1[ws_idx] <= SC_windex[ws_idx] * SL_ci_group_1d      ;//dly=22
-                    SC_ibufaddr[ws_idx]    <= SC_ibufaddr_t1[ws_idx] + SC_ndcig_cnt   ;//dly=23 
-                end
-
-                //calculate SC_idforpix
-                always @(posedge I_clk)begin
-                    SC_id_more0[ws_idx]           <= $signed(SC_id[ws_idx]) > 0                                     ;//dly=22
-                    S_rem_less_thr[ws_idx][p_idx] <= $signed(SC_wremainder[ws_idx]) < $signed(SL_wthreshold[p_idx]) ;//dly=22 
-                end
-
-                always @(posedge I_clk)begin
-                    if(SC_id_more0[ws_idx] && S_rem_less_thr[ws_idx][p_idx] && (!SL_split_en))begin
-                        SC_idforpix[ws_idx][p_idx] <= $signed(SC_ndid[ws_idx])-$signed(1);//dly=23
-                    end
-                    else begin
-                        SC_idforpix[ws_idx][p_idx] <= $signed(SC_ndid[ws_idx]);
-                    end
-                end
-
-                //calculate SC_k 
-                always @(posedge I_clk)begin
-                    SC_pfirst[ws_idx][p_idx] <= SC_idforpix[ws_idx][p_idx] * SL_wpart                           ;//dly=24
-                    SC_k_t1[ws_idx][p_idx]   <= $signed(SC_n1dwws[ws_idx]) - $signed(SC_pfirst[ws_idx][p_idx])  ;//dly=25
-                    SC_k[ws_idx][p_idx]      <= $signed(SC_k_t1[ws_idx][p_idx])-$signed(SL_p_stride_w[p_idx])   ;//dly=26
-                end
-
-                //calculate SC_depth
-                always @(posedge I_clk)begin
-                    SC_depth_t1[ws_idx][p_idx]  <= SC_idforpix[ws_idx][p_idx] * SL_kernel_w_ci_group        ;//dly=24
-                    SC_depth_t2[ws_idx][p_idx]  <= SC_depth_t1[ws_idx][p_idx] + SC_n1dcig_cnt               ;//dly=25 
-                    SC_depth_t2a[ws_idx][p_idx] <= SC_depth_t2[ws_idx][p_idx]                               ;//dly=26 
-                    SC_depth_t2b[ws_idx][p_idx] <= SC_depth_t2a[ws_idx][p_idx]                              ;//dly=27 
-                    SC_depth_t3[ws_idx][p_idx]  <= SC_k[ws_idx][p_idx] * SL_ci_group_1d                     ;//dly=27 
-                    SC_depth[ws_idx][p_idx]     <= SC_depth_t3[ws_idx][p_idx] + SC_depth_t2b[ws_idx][p_idx] ;//dly=28
-                end
-                //calculate SC_wr0,SC_wr1
-                always @(posedge I_clk)begin
-                    SC_wr0[ws_idx][p_idx]  <= SR_sbuf0_en && SC_k_suite[ws_idx][p_idx]   ;//dly=29
-                    SC_wr1[ws_idx][p_idx]  <= SR_sbuf1_en && SC_k_suite[ws_idx][p_idx]   ;
-                end
-
-                suite_range #(
-                    .C_DIM_WIDTH (C_CNV_K_WIDTH))
-                u_k_suite_range(
-                    .I_clk          (I_clk                      ),
-                    .I_index        (SC_k[ws_idx][p_idx]        ),//dly=26
-                    .I_index_upper  (I_kernel_w                 ),
-                    .O_index_suite  (SC_k_suite[ws_idx][p_idx]  ) //dly=28
-                );
-
-                suite_range #(
-                    .C_DIM_WIDTH (C_DIM_WIDTH))
-                u_windex_suite_range(
-                    .I_clk          (I_clk                                            ),
-                    .I_index        (SC_ndwindex[ws_idx]                              ),//dly=26
-                    .I_index_upper  ({{(C_DIM_WIDTH-C_CNV_K_WIDTH){1'b0}},I_kernel_w} ),
-                    .O_index_suite  (SC_windex_suite[ws_idx][p_idx]                   ) //dly=28
-                );
-            end //ws_idx
         end //p_idx
     end
 endgenerate
