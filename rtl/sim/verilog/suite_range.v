@@ -56,7 +56,7 @@ reg                          S_index_suite      ;
 
 always @(posedge I_clk)begin
     S_index_less0      <= ($signed(I_index) < 0)                            ;
-    S_index_lessupper  <= ($signed(I_index) < I_index_upper )               ; 
+    S_index_lessupper  <= ($signed(I_index) < $signed(I_index_upper) )      ; 
     S_index_suite      <= (!S_index_less0) && S_index_lessupper             ;
 end
 

@@ -42,7 +42,7 @@ output      [      C_DATA_WIDTH-1:0]O_dout
 
 //localparam   C_NCH_GROUP      = C_CNV_CH_WIDTH - C_POWER_OF_1ADOTS + 1  ;
 
-reg  [      C_DATA_WIDTH-1:0]S_dly[0:C_DLY_NUM-1]     ;
+reg  [      C_DATA_WIDTH-1:0]S_dly[0:C_DLY_NUM]     ;
 
 
 generate

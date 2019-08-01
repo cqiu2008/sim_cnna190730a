@@ -1511,12 +1511,25 @@ initial begin
     //$helloword;
     $fsdbDumpvars("+fsdbfile+tb_dut_top.fsdb");
     //$fsdbDumpMDA(AESL_inst_cnna.u_main_process.u_transform_hcnt_wrapper.hcntInst[0].u_transform_hcnt.u_hcnt_div_rempart.S_body0,0,16);
-
     //$fsdbDumpMDA(apatb_cnna_top.AESL_inst_cnna.u_main_process.u_transform_hcnt_wrapper.hcntInst[0].u_transform_hcnt.u_hcnt_div_rempart.S_body0,0,18);
-    //$fsdbDumpMDA(,0,18);
-    $fsdbDumpMDA(apatb_cnna_top.AESL_inst_cnna.u_main_process.u_multi_slide_windows_flatten.u_wo_total.S_body0,0,18 );
-    $fsdbDumpMDA(apatb_cnna_top.AESL_inst_cnna.u_main_process.u_multi_slide_windows_flatten.u_wo_total.S_case,0,17  );
-    $fsdbDumpMDA(apatb_cnna_top.AESL_inst_cnna.u_main_process.u_multi_slide_windows_flatten.u_wo_total.S_more,0,17  );
+    //$fsdbDumpMDA(apatb_cnna_top.AESL_inst_cnna.u_main_process.u_multi_slide_windows_flatten.u_wo_total.S_body0,0,18 );
+    //$fsdbDumpMDA(apatb_cnna_top.AESL_inst_cnna.u_main_process.u_multi_slide_windows_flatten.u_wo_total.S_case,0,17  );
+    //$fsdbDumpMDA(apatb_cnna_top.AESL_inst_cnna.u_main_process.u_multi_slide_windows_flatten.u_wo_total.S_more,0,17  );
+    //$fsdbDumpMDA(apatb_cnna_top.AESL_inst_cnna.u_main_process.u_multi_slide_windows_flatten.SC_wws                  ,0,2);
+    //$fsdbDumpMDA(apatb_cnna_top.AESL_inst_cnna.u_main_process.u_multi_slide_windows_flatten.SC_wws_divwpart         ,0,2);
+    //$fsdbDumpMDA(apatb_cnna_top.AESL_inst_cnna.u_main_process.u_multi_slide_windows_flatten.SC_wws_remwpart         ,0,2);
+    //$fsdbDumpMDA(apatb_cnna_top.AESL_inst_cnna.u_main_process.u_multi_slide_windows_flatten.SC_id                   ,0,2); 
+    //$fsdbDumpMDA(apatb_cnna_top.AESL_inst_cnna.u_main_process.u_multi_slide_windows_flatten.SC_windex               ,0,2);
+    //$fsdbDumpMDA(apatb_cnna_top.AESL_inst_cnna.u_main_process.u_multi_slide_windows_flatten.SC_wremainder           ,0,2);
+    //$fsdbDumpMDA(apatb_cnna_top.AESL_inst_cnna.u_main_process.u_multi_slide_windows_flatten.SL_wthreshold           ,0,8);
+    //$fsdbDumpMDA(apatb_cnna_top.AESL_inst_cnna.u_main_process.u_multi_slide_windows_flatten.SC_ibufaddr             ,0,2);
+
+//reg  [C_RAM_ADDR_WIDTH-1  :0]SC_addr0[C_RDBPIX][C_PEPIX]                ;
+//reg  [C_RAM_DATA_WIDTH-1  :0]SC_wdata0[C_RDBPIX]                        ;
+//wire [C_RAM_DATA_WIDTH-1  :0]S_rdata0[C_RDBPIX][C_PEPIX]                ;                                  
+//reg                          SC_wr0[C_RDBPIX][C_PEPIX]                  ;                                     
+    $fsdbDumpMDA;
+
     $fsdbDumpSVA;
 end
 endmodule
