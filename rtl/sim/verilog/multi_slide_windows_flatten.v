@@ -497,10 +497,10 @@ generate
 
             dly #(
                 .C_DATA_WIDTH   (C_DIM_WIDTH        ), 
-                .C_DLY_NUM      (20                 ))
+                .C_DLY_NUM      (18                 ))
             u_ndwws(
                 .I_clk          (I_clk              ),
-                .I_din          (SC_wws[ws_idd]     ),
+                .I_din          (SC_wws[ws_idd]     ),//dly=2
                 .O_dout         (SC_ndwws[ws_idd]   ) //dly=20
             );
 
@@ -649,10 +649,10 @@ generate
                 suite_range #(
                     .C_DIM_WIDTH (C_DIM_WIDTH))
                 u_windex_suite_range(
-                    .I_clk          (I_clk                                            ),
-                    .I_index        (SC_ndwindex[ws_idx]                              ),//dly=26
-                    .I_index_upper  ({{(C_DIM_WIDTH-C_CNV_K_WIDTH){1'b0}},I_kernel_w} ),
-                    .O_index_suite  (SC_windex_suite[ws_idx][p_idx]                   ) //dly=28
+                    .I_clk          (I_clk                          ),
+                    .I_index        (SC_ndwindex[ws_idx]            ),//dly=26
+                    .I_index_upper  (I_ipara_width                  ),
+                    .O_index_suite  (SC_windex_suite[ws_idx][p_idx] ) //dly=28
                 );
 
             end //ws_idx
