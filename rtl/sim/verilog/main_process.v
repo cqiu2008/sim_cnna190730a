@@ -89,8 +89,12 @@ input                               I_fomaxi_bvalid     ,
 output reg                          O_fomaxi_bready     
 );
 
+parameter    C_PEPIX          = {1'b1,{C_POWER_OF_PEPIX{1'b0}}}     ;
 localparam   C_WO_GROUP       = C_DIM_WIDTH - C_POWER_OF_PEPIX + 1  ;
 localparam   C_CI_GROUP       = C_CNV_CH_WIDTH - C_POWER_OF_1ADOTS+1; 
+localparam   C_RAM_LDATA_WIDTH= C_RAM_DATA_WIDTH * C_PEPIX          ;
+localparam   C_LQIBUF_WIDTH   = C_QIBUF_WIDTH * C_PEPIX             ;
+
 
 wire         [       C_DIM_WIDTH-1:0]S_hcnt                         ;
 wire         [       C_DIM_WIDTH-1:0]S_hcnt_pre                     ;
@@ -265,7 +269,6 @@ u0_load_image(
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // multi_slide_windows_flatten 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-parameter C_PEPIX          = {1'b1,{C_POWER_OF_PEPIX{1'b0}}}         ;
 
 multi_slide_windows_flatten #(
     .C_MEM_STYLE         (C_MEM_STYLE          ),
@@ -278,6 +281,7 @@ multi_slide_windows_flatten #(
     .C_PEPIX             (C_PEPIX              ),
     .C_DATA_WIDTH        (C_DATA_WIDTH         ),
     .C_QIBUF_WIDTH       (C_QIBUF_WIDTH        ),
+    .C_LQIBUF_WIDTH      (C_LQIBUF_WIDTH       ),
     .C_CNV_K_WIDTH       (C_CNV_K_WIDTH        ),
     .C_CNV_CH_WIDTH      (C_CNV_CH_WIDTH       ),
     .C_DIM_WIDTH         (C_DIM_WIDTH          ),
@@ -285,7 +289,8 @@ multi_slide_windows_flatten #(
     .C_M_AXI_ADDR_WIDTH  (C_M_AXI_ADDR_WIDTH   ),
     .C_M_AXI_DATA_WIDTH  (C_M_AXI_DATA_WIDTH   ),
     .C_RAM_ADDR_WIDTH    (C_RAM_ADDR_WIDTH     ),
-    .C_RAM_DATA_WIDTH    (C_RAM_DATA_WIDTH     ))
+    .C_RAM_DATA_WIDTH    (C_RAM_DATA_WIDTH     ),
+    .C_RAM_LDATA_WIDTH   (C_RAM_LDATA_WIDTH    ))
 u_multi_slide_windows_flatten(
     .I_clk               (I_clk                 ),
     .I_rst               (I_rst                 ),
@@ -296,10 +301,10 @@ u_multi_slide_windows_flatten(
     .O_ibuf1_addr        (S_ibuf1_addr          ), 
     .I_ibuf0_rdata       (S_ibuf0_rdata         ), 
     .I_ibuf1_rdata       (S_ibuf1_rdata         ), 
-    .I_raddr0            (), 
-    .I_raddr1            (), 
-    .O_rdata0            (), 
-    .O_rdata1            (), 
+    .I_sraddr0           (), 
+    .I_sraddr1           (), 
+    .O_srdata0           (), 
+    .O_srdata1           (), 
     .I_ipara_height      (I_ipara_height        ),
     .I_hindex            (S_hindex[1]           ),
     .I_hcnt_odd          (S_hcnt[0]             ),//1,3,5,...active

@@ -41,6 +41,7 @@ parameter
     C_PEPIX                 = 8         ,
     C_DATA_WIDTH            = 8         ,
     C_QIBUF_WIDTH           = 12        ,
+    C_LQIBUF_WIDTH          = 12*8      ,       
     C_CNV_K_WIDTH           = 8         ,
     C_CNV_CH_WIDTH          = 8         ,
     C_DIM_WIDTH             = 16        ,
@@ -48,7 +49,8 @@ parameter
     C_M_AXI_ADDR_WIDTH      = 32        ,
     C_M_AXI_DATA_WIDTH      = 128       ,
     C_RAM_ADDR_WIDTH        = 9         ,
-    C_RAM_DATA_WIDTH        = 128       
+    C_RAM_DATA_WIDTH        = 128       , 
+    C_RAM_LDATA_WIDTH       = 128*8       
 )(
 // clk
 input                               I_clk               ,
@@ -62,10 +64,15 @@ output      [C_RAM_ADDR_WIDTH-1  :0]O_ibuf1_addr        ,
 input       [C_RAM_DATA_WIDTH-1  :0]I_ibuf0_rdata       ,//dly=26 
 input       [C_RAM_DATA_WIDTH-1  :0]I_ibuf1_rdata       , 
 //sbuf
-input       [C_RAM_ADDR_WIDTH-1  :0]I_raddr0            , 
-input       [C_RAM_ADDR_WIDTH-1  :0]I_raddr1            , 
-output reg  [C_RAM_DATA_WIDTH-1  :0]O_rdata0            , 
-output reg  [C_RAM_DATA_WIDTH-1  :0]O_rdata1            , 
+input       [C_RAM_ADDR_WIDTH-1  :0]I_sraddr0           , 
+input       [C_RAM_ADDR_WIDTH-1  :0]I_sraddr1           , 
+output reg  [C_RAM_LDATA_WIDTH-1 :0]O_srdata0           , 
+output reg  [C_RAM_LDATA_WIDTH-1 :0]O_srdata1           , 
+//qbuf
+input       [C_RAM_ADDR_WIDTH-1  :0]I_qraddr0           , 
+input       [C_RAM_ADDR_WIDTH-1  :0]I_qraddr1           , 
+output reg  [  C_LQIBUF_WIDTH-1  :0]O_qrdata0           , 
+output reg  [  C_LQIBUF_WIDTH-1  :0]O_qrdata1           , 
 // reg
 input       [       C_DIM_WIDTH-1:0]I_ipara_height      ,
 input       [       C_DIM_WIDTH-1:0]I_hindex            ,
@@ -105,7 +112,7 @@ reg                          SR_sbuf1_index_neq                         ;
 reg                          SR_swap_start                              ;
 wire                         SR_ndswap_start                            ;
 reg                          SR_swap_done                               ;
-wire                         SR_ndswap_done                             ;//dly=29
+wire                         SR_ndswap_done                             ;//dly=31
 reg                          SR_sbuf0_en                                ;
 reg                          SR_sbuf1_en                                ;
 reg                          SR_no_suite_done                           ;
@@ -127,7 +134,8 @@ wire [       C_DIM_WIDTH-1:0]SC_ndid[C_RDBPIX]                          ;
 reg                          SC_id_more0[C_RDBPIX]                      ;
 reg  [       C_DIM_WIDTH-1:0]SC_windex[C_RDBPIX]                        ;//dly=21
 reg  [       C_DIM_WIDTH-1:0]SC_ndwindex[C_RDBPIX]                      ;//dly=26
-reg                          SC_windex_suite[C_RDBPIX][C_PEPIX]         ;
+reg                          SC_windex_suite[C_RDBPIX][C_PEPIX]         ;//dly=28
+wire                         SC_ndwindex_suite[C_RDBPIX][C_PEPIX]       ;//dly=30
 reg  [       C_DIM_WIDTH-1:0]SC_wremainder[C_RDBPIX]                    ;
 reg  [       C_DIM_WIDTH-1:0]SL_wthreshold[C_PEPIX]                     ;
 reg  [     C_CNV_K_PEPIX-1:0]SL_p_stride_w[C_PEPIX]                     ;
@@ -138,8 +146,8 @@ reg  [       C_DIM_WIDTH-1:0]SC_pfirst[C_RDBPIX][C_PEPIX]               ;
 reg  [     C_CNV_K_WIDTH-1:0]SC_k[C_RDBPIX][C_PEPIX]                    ;
 reg  [     C_CNV_K_WIDTH-1:0]SC_k_t1[C_RDBPIX][C_PEPIX]                 ;
 reg                          SC_k_suite[C_RDBPIX][C_PEPIX]              ;
-
-reg  [       C_DIM_WIDTH-1:0]SC_depth[C_RDBPIX][C_PEPIX]                ;
+reg  [       C_DIM_WIDTH-1:0]SC_depth[C_RDBPIX][C_PEPIX]                ;//dly=28
+reg  [       C_DIM_WIDTH-1:0]SC_ndepth[C_RDBPIX][C_PEPIX]               ;//dly=30
 reg  [       C_DIM_WIDTH-1:0]SC_depth_t1[C_RDBPIX][C_PEPIX]             ;
 reg  [       C_DIM_WIDTH-1:0]SC_depth_t2[C_RDBPIX][C_PEPIX]             ;
 reg  [       C_DIM_WIDTH-1:0]SC_depth_t2a[C_RDBPIX][C_PEPIX]            ;
@@ -147,7 +155,6 @@ reg  [       C_DIM_WIDTH-1:0]SC_depth_t2b[C_RDBPIX][C_PEPIX]            ;
 reg  [       C_DIM_WIDTH-1:0]SC_depth_t3[C_RDBPIX][C_PEPIX]             ;
 reg  [  C_RAM_ADDR_WIDTH-1:0]SC_ibufaddr_t1[C_RDBPIX]                   ;
 reg  [  C_RAM_ADDR_WIDTH-1:0]SC_ibufaddr[C_RDBPIX]                      ;
-
 reg  [     C_QIBUF_WIDTH-1:0]SC_sum[C_RDBPIX]                           ;
 wire [       C_NCH_GROUP-1:0]SC_cig_cnt                                 ;
 wire [       C_NCH_GROUP-1:0]SC_ndcig_cnt                               ;
@@ -178,25 +185,26 @@ wire [       C_DIM_WIDTH-1:0]SC_wog_pe_or_rdb_pix                       ;
 reg  [     C_CNV_K_GROUP-1:0]SL_kernel_w_ci_group                       ;
 wire [C_RAM_DATA_WIDTH-1  :0]SC_ibuf_rdata[C_RDBPIX]                    ;//dly=28
 wire [C_RAM_DATA_WIDTH-1  :0]SC_ndibuf_rdata[C_RDBPIX]                  ;//dly=28
-
 reg  [C_RAM_ADDR_WIDTH-1  :0]SC_addr0[C_RDBPIX][C_PEPIX]                ;//dly=29
 reg  [C_RAM_ADDR_WIDTH-1  :0]SC_addr1[C_RDBPIX][C_PEPIX]                ;
-reg                          SC_wr0[C_RDBPIX][C_PEPIX]                  ;                                     
+reg                          SC_wr0[C_RDBPIX][C_PEPIX]                  ;//dly=29       
 reg                          SC_wr1[C_RDBPIX][C_PEPIX]                  ;                                     
-reg  [C_RAM_DATA_WIDTH-1  :0]SC_wdata0[C_RDBPIX]                        ;
-reg  [C_RAM_DATA_WIDTH-1  :0]SC_wdata1[C_RDBPIX]                        ;
+reg  [C_RAM_DATA_WIDTH-1  :0]SC_wdata0[C_RDBPIX][C_PEPIX]               ;
+reg  [C_RAM_DATA_WIDTH-1  :0]SC_wdata1[C_RDBPIX][C_PEPIX]               ;
 wire [C_RAM_DATA_WIDTH-1  :0]SC_rdata0[C_RDBPIX][C_PEPIX]               ;                                  
 wire [C_RAM_DATA_WIDTH-1  :0]SC_rdata1[C_RDBPIX][C_PEPIX]               ;                                  
-
+wire [C_RAM_LDATA_WIDTH-1 :0]SC_lrdata0[C_RDBPIX]                       ;
+wire [C_RAM_LDATA_WIDTH-1 :0]SC_lrdata1[C_RDBPIX]                       ;
 reg  [C_RAM_ADDR_WIDTH-1  :0]SC_qaddr0[C_RDBPIX][C_PEPIX]               ;//dly=
 reg  [C_RAM_ADDR_WIDTH-1  :0]SC_qaddr1[C_RDBPIX][C_PEPIX]               ;
-reg                          SC_qwr0[C_RDBPIX][C_PEPIX]                 ;                                     
-reg                          SC_qwr1[C_RDBPIX][C_PEPIX]                 ;                                     
-reg  [C_RAM_DATA_WIDTH-1  :0]SC_qwdata0[C_RDBPIX]                       ;
-reg  [C_RAM_DATA_WIDTH-1  :0]SC_qwdata1[C_RDBPIX]                       ;
-wire [C_RAM_DATA_WIDTH-1  :0]SC_qrdata0[C_RDBPIX][C_PEPIX]              ;                                  
-wire [C_RAM_DATA_WIDTH-1  :0]SC_qrdata1[C_RDBPIX][C_PEPIX]              ;                                  
-
+wire                         SC_qwr0[C_RDBPIX][C_PEPIX]                 ;//dly=31    
+wire                         SC_qwr1[C_RDBPIX][C_PEPIX]                 ;                                     
+reg  [     C_QIBUF_WIDTH-1:0]SC_qwdata0[C_RDBPIX][C_PEPIX]              ;
+reg  [     C_QIBUF_WIDTH-1:0]SC_qwdata1[C_RDBPIX][C_PEPIX]              ;
+wire [     C_QIBUF_WIDTH-1:0]SC_qrdata0[C_RDBPIX][C_PEPIX]              ;                                  
+wire [     C_QIBUF_WIDTH-1:0]SC_qrdata1[C_RDBPIX][C_PEPIX]              ;                                  
+wire [    C_LQIBUF_WIDTH-1:0]SC_lqrdata0[C_RDBPIX]                      ;
+wire [    C_LQIBUF_WIDTH-1:0]SC_lqrdata1[C_RDBPIX]                      ;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // initial layer variable
@@ -204,16 +212,16 @@ wire [C_RAM_DATA_WIDTH-1  :0]SC_qrdata1[C_RDBPIX][C_PEPIX]              ;
 
 // calcuate SL_split_en 
 always @(posedge I_clk)begin
-    SL_pepix_stride_w                <= {I_stride_w[C_CNV_K_WIDTH-C_POWER_OF_PEPIX-1:0],{C_POWER_OF_PEPIX{1'b0}}}   ;
-    SL_split_en                      <= !(I_kernel_w < SL_pepix_stride_w)                                           ;
+    SL_pepix_stride_w <= {I_stride_w[C_CNV_K_WIDTH-C_POWER_OF_PEPIX-1:0],{C_POWER_OF_PEPIX{1'b0}}}   ;
+    SL_split_en       <= !(I_kernel_w < SL_pepix_stride_w)                                           ;
 end
 
 // calcuate SL_wo_total 
 always @(posedge I_clk)begin
-    SL_wo_total1                     <= I_ipara_width + {I_pad_w[C_CNV_K_WIDTH-1:0],1'b0}                           ;
-    SL_wo_total2                     <= SL_wo_total1 - I_kernel_w                                                   ; 
-    //SL_wo_total3                     <= SL_wo_total2 / I_stride_w                                                 ;////divtag
-    SL_wo_total                       <= SL_wo_total3 + {{(C_DIM_WIDTH-1){1'b0}},1'b1}                              ;
+    SL_wo_total1 <= I_ipara_width + {I_pad_w[C_CNV_K_WIDTH-1:0],1'b0}  ;
+    SL_wo_total2 <= SL_wo_total1 - I_kernel_w                          ; 
+    //SL_wo_total3   <= SL_wo_total2 / I_stride_w                          ;////divtag
+    SL_wo_total  <= SL_wo_total3 + {{(C_DIM_WIDTH-1){1'b0}},1'b1}      ;
 end
 
 divider #(
@@ -234,24 +242,24 @@ ceil_power_of_2 #(
     .C_DIN_WIDTH    (C_DIM_WIDTH        ),
     .C_POWER2_NUM   (C_POWER_OF_PEPIX   ))
 U0_wot_div_pepix(
-    .I_din (SL_wo_total             ),
-    .O_dout(SL_wot_div_pepix        )   
+    .I_din          (SL_wo_total        ),
+    .O_dout         (SL_wot_div_pepix   )   
 );
 
 ceil_power_of_2 #(
     .C_DIN_WIDTH    (C_DIM_WIDTH        ),
     .C_POWER2_NUM   (C_POWER_OF_RDBPIX  ))
 U0_wot_div_rdbpix(
-    .I_din (SL_wo_total1            ),
-    .O_dout(SL_wot_div_rdbpix       )   
+    .I_din          (SL_wo_total1       ),
+    .O_dout         (SL_wot_div_rdbpix  )   
 );
 
 always @(posedge I_clk)begin
     if(SL_split_en)begin
-        SL_wo_group  <=   SL_wot_div_pepix    ;
+        SL_wo_group  <= SL_wot_div_pepix    ;
     end
     else begin
-        SL_wo_group  <=   SL_wot_div_rdbpix   ;
+        SL_wo_group  <= SL_wot_div_rdbpix   ;
     end
 end
 
@@ -288,7 +296,7 @@ u_wpart_t(
 );
 
 always @(posedge I_clk)begin
-    SL_wpart    <= SL_wpart_t        ; 
+    SL_wpart <= SL_wpart_t        ; 
 end
 
 // calcuate SL_ci_group_1d
@@ -393,11 +401,11 @@ end
 
 dly #(
     .C_DATA_WIDTH   (1          ), 
-    .C_DLY_NUM      (29         ))
+    .C_DLY_NUM      (31         ))
 u_ndswap_done(
     .I_clk     (I_clk           ),
     .I_din     (SR_swap_done    ),
-    .O_dout    (SR_ndswap_done  ) //dly=29
+    .O_dout    (SR_ndswap_done  ) //dly=31
 );
 
 always @(posedge I_clk)begin
@@ -466,9 +474,6 @@ U0_loop3_wog_cnt(
 .O_cnt              (SC_wog_cnt             )
 );
 
-
-
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // calculate dly variable
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -498,10 +503,51 @@ u_n1dcig(
     .I_din          (SC_ndcig_cnt           ),
     .O_dout         (SC_n1dcig_cnt          ) //dly=24
 );
+
 genvar ws_idd;
+genvar p_idd;
 generate
-    begin:ws_idd_cm
-        for(ws_idd=0;ws_idd<C_RDBPIX;ws_idd=ws_idd+1)begin
+    begin:dly_idd
+        for(ws_idd=0;ws_idd<C_RDBPIX;ws_idd=ws_idd+1)begin:dly_idd_s1
+            for(p_idd=0;p_idd<C_PEPIX;p_idd=p_idd+1)begin:dly_idd_s2
+
+                dly #(
+                    .C_DATA_WIDTH   (1                                  ), 
+                    .C_DLY_NUM      (2                                  ))
+                u_ndwindex_suite(
+                    .I_clk          (I_clk                              ),
+                    .I_din          (SC_windex_suite[ws_idd][p_idd]     ),//dly=28
+                    .O_dout         (SC_ndwindex_suite[ws_idd][p_idd]   ) //dly=30
+                );
+
+                dly #(
+                    .C_DATA_WIDTH   (1                                  ), 
+                    .C_DLY_NUM      (2                                  ))
+                u_qwr0(
+                    .I_clk          (I_clk                              ),
+                    .I_din          (SC_wr0[ws_idd][p_idd]              ),//dly=29
+                    .O_dout         (SC_qwr0[ws_idd][p_idd]             ) //dly=31
+                );
+
+                dly #(
+                    .C_DATA_WIDTH   (1                                  ), 
+                    .C_DLY_NUM      (2                                  ))
+                u_qwr1(
+                    .I_clk          (I_clk                              ),
+                    .I_din          (SC_wr1[ws_idd][p_idd]              ),//dly=29
+                    .O_dout         (SC_qwr1[ws_idd][p_idd]             ) //dly=31
+                );
+
+                dly #(
+                    .C_DATA_WIDTH   (C_DIM_WIDTH                ), 
+                    .C_DLY_NUM      (2                          ))
+                u_ndepth(
+                    .I_clk          (I_clk                      ),
+                    .I_din          (SC_depth[ws_idd][p_idd]    ),//dly=28
+                    .O_dout         (SC_ndepth[ws_idd][p_idd]   ) //dly=30
+                );
+
+            end
 
             dly #(
                 .C_DATA_WIDTH   (C_DIM_WIDTH        ), 
@@ -547,6 +593,8 @@ generate
                 .I_din          (SC_ibuf_rdata[ws_idd]  ),//dly=26
                 .O_dout         (SC_ndibuf_rdata[ws_idd]) //dly=28
             );
+
+
         end
     end
 endgenerate
@@ -572,7 +620,7 @@ end
 genvar ws_idc;
 generate
     begin:ws_idc_cm
-        for(ws_idc=0;ws_idc<C_RDBPIX;ws_idc=ws_idc+1)begin
+        for(ws_idc=0;ws_idc<C_RDBPIX;ws_idc=ws_idc+1)begin:ws_idc_cm_s1
             divider #(
                 .C_DIVIDEND   (C_DIM_WIDTH  ), 
                 .C_DIVISOR    (C_DIM_WIDTH  ),
@@ -607,13 +655,13 @@ genvar ws_idx;
 genvar p_idx;
 generate
     begin:ws_p_idx
-        for(p_idx=0;p_idx<C_PEPIX;p_idx=p_idx+1)begin:p_idx
+        for(p_idx=0;p_idx<C_PEPIX;p_idx=p_idx+1)begin:ws_p_idx_s1
             //main loop unroll
-            for(ws_idx=0;ws_idx<C_RDBPIX;ws_idx=ws_idx+1)begin:ws_idx
+            for(ws_idx=0;ws_idx<C_RDBPIX;ws_idx=ws_idx+1)begin:ws_p_idx_s2
                 //calculate SC_idforpix
                 always @(posedge I_clk)begin
                     SC_id_more0[ws_idx]           <= $signed(SC_id[ws_idx]) > 0                                     ;//dly=22
-                    SC_rem_less_thr[ws_idx][p_idx] <= $signed(SC_wremainder[ws_idx]) < $signed(SL_wthreshold[p_idx]) ;//dly=22 
+                    SC_rem_less_thr[ws_idx][p_idx] <= $signed(SC_wremainder[ws_idx]) < $signed(SL_wthreshold[p_idx]);//dly=22 
                 end
                 always @(posedge I_clk)begin
                     if(SC_id_more0[ws_idx] && SC_rem_less_thr[ws_idx][p_idx] && (!SL_split_en))begin
@@ -639,11 +687,6 @@ generate
                     SC_depth_t3[ws_idx][p_idx]  <= SC_k[ws_idx][p_idx] * SL_ci_group_1d                     ;//dly=27 
                     SC_depth[ws_idx][p_idx]     <= SC_depth_t3[ws_idx][p_idx] + SC_depth_t2b[ws_idx][p_idx] ;//dly=28
                 end
-                //calculate SC_wr0,SC_wr1
-                always @(posedge I_clk)begin
-                    SC_wr0[ws_idx][p_idx]  <= SR_sbuf0_en && SC_k_suite[ws_idx][p_idx]   ;//dly=29
-                    SC_wr1[ws_idx][p_idx]  <= SR_sbuf1_en && SC_k_suite[ws_idx][p_idx]   ;
-                end
 
                 suite_range #(
                     .C_DIM_WIDTH (C_CNV_K_WIDTH))
@@ -663,6 +706,12 @@ generate
                     .O_index_suite  (SC_windex_suite[ws_idx][p_idx] ) //dly=28
                 );
 
+                //calculate SC_wr0,SC_wr1
+                always @(posedge I_clk)begin
+                    SC_wr0[ws_idx][p_idx]  <= SR_sbuf0_en && SC_k_suite[ws_idx][p_idx]   ;//dly=29
+                    SC_wr1[ws_idx][p_idx]  <= SR_sbuf1_en && SC_k_suite[ws_idx][p_idx]   ;
+                end
+
             end //ws_idx
             //calculate SL_wthreshold
             always @(posedge I_clk)begin
@@ -672,15 +721,16 @@ generate
             end
             //sbuf write process
             always @(posedge I_clk)begin
-                SC_addr0[0][p_idx] <= SR_sbuf0_en               ? SC_depth[0][p_idx] : I_raddr0  ;//dly=29
-                SC_addr0[1][p_idx] <= SR_sbuf0_en               ? SC_depth[1][p_idx] : I_raddr1  ; 
-                SC_addr1[0][p_idx] <= SR_sbuf1_en               ? SC_depth[0][p_idx] : I_raddr0  ;
-                SC_addr1[1][p_idx] <= SR_sbuf1_en               ? SC_depth[1][p_idx] : I_raddr1  ;
-                SC_wdata0[0]       <= SC_windex_suite[0][p_idx] ? SC_ndibuf_rdata[0] : 0         ;//dly=29
-                SC_wdata0[1]       <= SC_windex_suite[1][p_idx] ? SC_ndibuf_rdata[1] : 0         ;
-                SC_wdata1[0]       <= SC_windex_suite[0][p_idx] ? SC_ndibuf_rdata[0] : 0         ;
-                SC_wdata1[1]       <= SC_windex_suite[1][p_idx] ? SC_ndibuf_rdata[1] : 0         ;
+                SC_addr0[0][p_idx]  <= SR_sbuf0_en               ? SC_depth[0][p_idx] : I_sraddr0  ;//dly=29
+                SC_addr0[1][p_idx]  <= SR_sbuf0_en               ? SC_depth[1][p_idx] : I_sraddr1  ; 
+                SC_addr1[0][p_idx]  <= SR_sbuf1_en               ? SC_depth[0][p_idx] : I_sraddr0  ;
+                SC_addr1[1][p_idx]  <= SR_sbuf1_en               ? SC_depth[1][p_idx] : I_sraddr1  ;
+                SC_wdata0[0][p_idx] <= SC_windex_suite[0][p_idx] ? SC_ndibuf_rdata[0] : 0         ;//dly=29
+                SC_wdata0[1][p_idx] <= SC_windex_suite[1][p_idx] ? SC_ndibuf_rdata[1] : 0         ;
+                SC_wdata1[0][p_idx] <= SC_windex_suite[0][p_idx] ? SC_ndibuf_rdata[0] : 0         ;
+                SC_wdata1[1][p_idx] <= SC_windex_suite[1][p_idx] ? SC_ndibuf_rdata[1] : 0         ;
             end
+            //write to sbuf  
             dpram #(
                 .MEM_STYLE  (C_MEM_STYLE                ),//"distributed"
                 .ASIZE      (C_RAM_ADDR_WIDTH           ),   
@@ -688,13 +738,13 @@ generate
             u_sbuf0(
                 .I_clk0     (I_clk                      ),
                 .I_addr0    (SC_addr0[0][p_idx]         ),
-                .I_wdata0   (SC_wdata0[0]               ),
+                .I_wdata0   (SC_wdata0[0][p_idx]        ),
                 .I_ce0      (1'b1                       ),
                 .I_wr0      (SC_wr0[0][p_idx]           ),
                 .O_rdata0   (SC_rdata0[0][p_idx]        ),
                 .I_clk1     (I_clk                      ),
                 .I_addr1    (SC_addr0[1][p_idx]         ),
-                .I_wdata1   (SC_wdata0[1]               ),
+                .I_wdata1   (SC_wdata0[1][p_idx]        ),
                 .I_ce1      (1'b1                       ),
                 .I_wr1      (SC_wr0[1][p_idx]           ),
                 .O_rdata1   (SC_rdata0[1][p_idx]        )
@@ -706,13 +756,13 @@ generate
             u_sbuf1(
                 .I_clk0     (I_clk                      ),
                 .I_addr0    (SC_addr1[0][p_idx]         ),
-                .I_wdata0   (SC_wdata1[0]               ),
+                .I_wdata0   (SC_wdata1[0][p_idx]        ),
                 .I_ce0      (1'b1                       ),
                 .I_wr0      (SC_wr1[0][p_idx]           ),
                 .O_rdata0   (SC_rdata1[0][p_idx]        ),
                 .I_clk1     (I_clk                      ),
                 .I_addr1    (SC_addr1[1][p_idx]         ),
-                .I_wdata1   (SC_wdata1[1]               ),
+                .I_wdata1   (SC_wdata1[1][p_idx]        ),
                 .I_ce1      (1'b1                       ),
                 .I_wr1      (SC_wr1[1][p_idx]           ),
                 .O_rdata1   (SC_rdata1[1][p_idx]        )
@@ -720,6 +770,42 @@ generate
         end //p_idx
     end
 endgenerate
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// take the SC_rdata0/1 array to one larger width 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+genvar ws_idr;
+genvar p_idr;
+generate
+    begin:rdata_gen
+        for(ws_idr=0;ws_idr<C_RDBPIX;ws_idr=ws_idr+1)begin:rs1
+            for(p_idr=0;p_idr<C_PEPIX;p_idr=p_idr+1)begin:rs2
+                assign SC_lrdata0[ws_idr][(p_idr+1)*C_PEPIX-1:p_idr*C_PEPIX] = SC_rdata0[ws_idr][p_idr];
+                assign SC_lrdata1[ws_idr][(p_idr+1)*C_PEPIX-1:p_idr*C_PEPIX] = SC_rdata1[ws_idr][p_idr];
+            end
+        end
+    end
+endgenerate
+
+always @(posedge I_clk)begin
+    if(!SR_sbuf0_en)begin
+        O_srdata0 <= SC_lrdata0[0]  ;
+        O_srdata1 <= SC_lrdata0[1]  ;
+    end
+    else if(!SR_sbuf1_en)begin
+        O_srdata0 <= SC_lrdata1[0]  ;
+        O_srdata1 <= SC_lrdata1[1]  ;
+    end
+    else begin
+        O_srdata0 <= 0              ; 
+        O_srdata1 <= 0              ; 
+    end
+end
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// ibuf raddress  
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 assign O_ibuf0_addr     = SC_ibufaddr[0];//dly=23
 assign O_ibuf1_addr     = SC_ibufaddr[1];//dly=23 
@@ -730,6 +816,60 @@ assign SC_ibuf_rdata[1] = I_ibuf1_rdata ;//dly=26
 // write qibuf 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+genvar p_idq;
+generate
+    begin
+        for(p_idq=0;p_idq<C_PEPIX;p_idq=p_idq+1)begin:p_idq_s1
+            always @(posedge I_clk)begin
+                SC_qwdata0[0][p_idq] <= SC_ndwindex_suite[0][p_idq] ? SC_sum[0]           : {C_QIBUF_WIDTH{1'b0}}   ;//dly=31
+                SC_qwdata1[0][p_idq] <= SC_ndwindex_suite[0][p_idq] ? SC_sum[0]           : {C_QIBUF_WIDTH{1'b0}}   ;//dly=31
+                SC_qwdata0[1][p_idq] <= SC_ndwindex_suite[1][p_idq] ? SC_sum[1]           : {C_QIBUF_WIDTH{1'b0}}   ;//dly=31
+                SC_qwdata1[1][p_idq] <= SC_ndwindex_suite[1][p_idq] ? SC_sum[1]           : {C_QIBUF_WIDTH{1'b0}}   ;//dly=31
+                 SC_qaddr0[0][p_idq] <= SR_sbuf0_en                 ? SC_ndepth[0][p_idq] : I_qraddr0               ;//dly=31
+                 SC_qaddr0[1][p_idq] <= SR_sbuf0_en                 ? SC_ndepth[1][p_idq] : I_qraddr1               ; 
+                 SC_qaddr1[0][p_idq] <= SR_sbuf1_en                 ? SC_ndepth[0][p_idq] : I_qraddr0               ;
+                 SC_qaddr1[1][p_idq] <= SR_sbuf1_en                 ? SC_ndepth[1][p_idq] : I_qraddr1               ;
+            end
+            dpram #(
+                .MEM_STYLE  (C_MEM_STYLE                ),//"distributed"
+                .ASIZE      (C_RAM_ADDR_WIDTH           ),   
+                .DSIZE      (C_QIBUF_WIDTH              ))
+            u_qibuf0(
+                .I_clk0     (I_clk                      ),
+                .I_addr0    (SC_qaddr0[0][p_idq]        ),
+                .I_wdata0   (SC_qwdata0[0][p_idq]       ),
+                .I_ce0      (1'b1                       ),
+                .I_wr0      (SC_qwr0[0][p_idq]          ),
+                .O_rdata0   (SC_qrdata0[0][p_idq]       ),
+                .I_clk1     (I_clk                      ),
+                .I_addr1    (SC_qaddr0[1][p_idq]        ),
+                .I_wdata1   (SC_qwdata0[1][p_idq]       ),
+                .I_ce1      (1'b1                       ),
+                .I_wr1      (SC_qwr0[1][p_idq]          ),
+                .O_rdata1   (SC_qrdata0[1][p_idq]       )
+            );
+            dpram #(
+                .MEM_STYLE  (C_MEM_STYLE                ),//"distributed"
+                .ASIZE      (C_RAM_ADDR_WIDTH           ),   
+                .DSIZE      (C_QIBUF_WIDTH              ))
+            u_qibuf1(
+                .I_clk0     (I_clk                      ),
+                .I_addr0    (SC_qaddr1[0][p_idq]        ),
+                .I_wdata0   (SC_qwdata1[0][p_idq]       ),
+                .I_ce0      (1'b1                       ),
+                .I_wr0      (SC_qwr1[0][p_idq]          ),
+                .O_rdata0   (SC_qrdata1[0][p_idq]       ),
+                .I_clk1     (I_clk                      ),
+                .I_addr1    (SC_qaddr1[1][p_idq]        ),
+                .I_wdata1   (SC_qwdata1[1][p_idq]       ),
+                .I_ce1      (1'b1                       ),
+                .I_wr1      (SC_qwr1[1][p_idq]          ),
+                .O_rdata1   (SC_qrdata1[1][p_idq]       )
+            );
+        end
+    end
+endgenerate
+
 iemem_sum #(
     .C_IEMEM_WIDTH (C_M_AXI_DATA_WIDTH ), 
     .C_SPLIT_WIDTH (C_DATA_WIDTH       ),
@@ -737,7 +877,7 @@ iemem_sum #(
 u_iemem_sum0(
     .I_clk         (I_clk              ),
     .I_din         (I_ibuf0_rdata      ),//dly=26
-    .O_dout        (SC_sum[0]          ) //dly=30
+    .O_dout        (SC_sum[0]          ) //dly=30,hard
 );
 
 iemem_sum #(
@@ -751,14 +891,36 @@ u_iemem_sum1(
 );
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// load_image  
+// take the SC_qrdata0/1 array to one larger width 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// Naming specification                                                                         
-// (1) w+"xxx" name type , means write clock domain                                             
-//        such as wrst,wclk,winc,wdata, wptr, waddr,wfull, and so on                            
-////////////////////////////////////////////////////////////////////////////////////////////////////
+genvar ws_idqr;
+genvar p_idqr;
+generate
+    begin:idqrdata_gen
+        for(ws_idqr=0;ws_idqr<C_RDBPIX;ws_idqr=ws_idqr+1)begin:rs1
+            for(p_idqr=0;p_idqr<C_PEPIX;p_idqr=p_idqr+1)begin:rs2
+                assign SC_lqrdata0[ws_idqr][(p_idqr+1)*C_PEPIX-1:p_idqr*C_PEPIX] = SC_qrdata0[ws_idqr][p_idqr];
+                assign SC_lqrdata1[ws_idqr][(p_idqr+1)*C_PEPIX-1:p_idqr*C_PEPIX] = SC_qrdata1[ws_idqr][p_idqr];
+            end
+        end
+    end
+endgenerate
+
+always @(posedge I_clk)begin
+    if(!SR_sbuf0_en)begin
+        O_qrdata0 <= SC_lqrdata0[0]  ;
+        O_qrdata1 <= SC_lqrdata0[1]  ;
+    end
+    else if(!SR_sbuf1_en)begin
+        O_qrdata0 <= SC_lqrdata1[0]  ;
+        O_qrdata1 <= SC_lqrdata1[1]  ;
+    end
+    else begin
+        O_qrdata0 <= 0              ; 
+        O_qrdata1 <= 0              ; 
+    end
+end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                
@@ -766,10 +928,6 @@ u_iemem_sum1(
 // __|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  
 //                                                                                                
 //                                                                                                
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-//        u0_wptr_full                                                                           
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 endmodule
