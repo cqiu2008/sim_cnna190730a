@@ -63,6 +63,7 @@ input       [     C_CNV_K_WIDTH-1:0]I_stride_h          ,
 input       [     C_CNV_K_WIDTH-1:0]I_stride_w          ,//
 input       [     C_CNV_K_WIDTH-1:0]I_pad_h             ,
 input       [     C_CNV_K_WIDTH-1:0]I_pad_w             ,//
+input       [C_M_AXI_ADDR_WIDTH-1:0]I_opara_addr_img_out,
 input       [       C_DIM_WIDTH-1:0]I_opara_width       ,//
 input       [       C_DIM_WIDTH-1:0]I_opara_height      ,
 input       [    C_CNV_CH_WIDTH-1:0]I_opara_co          ,
@@ -78,15 +79,15 @@ output                              O_fimaxi_rready     ,
 input                               I_fimaxi_rvalid     ,
 input       [C_M_AXI_DATA_WIDTH-1:0]I_fimaxi_rdata      , 
 // fo master channel
-output reg  [C_M_AXI_LEN_WIDTH-1 :0]O_fomaxi_awlen      ,
+output      [C_M_AXI_LEN_WIDTH-1 :0]O_fomaxi_awlen      ,
 input                               I_fomaxi_awready    ,   
 output                              O_fomaxi_awvalid    ,
-output reg  [C_M_AXI_ADDR_WIDTH-1:0]O_fomaxi_awaddr     ,
+output      [C_M_AXI_ADDR_WIDTH-1:0]O_fomaxi_awaddr     ,
 input                               I_fomaxi_wready     ,
-output reg                          O_fomaxi_wvalid     ,
+output                              O_fomaxi_wvalid     ,
 output      [C_M_AXI_DATA_WIDTH-1:0]O_fomaxi_wdata      ,   
 input                               I_fomaxi_bvalid     ,
-output reg                          O_fomaxi_bready     
+output                              O_fomaxi_bready     
 );
 
 parameter    C_PEPIX          = {1'b1,{C_POWER_OF_PEPIX{1'b0}}}     ;
@@ -125,10 +126,15 @@ wire                                 S_ppap_done                    ;
 wire                                 S_mpap_start                   ;
 wire                                 S_mpap_done                    ;   
 reg          [C_M_AXI_ADDR_WIDTH-1:0]S_fibase_addr                  ; 
+reg          [C_M_AXI_ADDR_WIDTH-1:0]S_fobase_addr                  ; 
 wire         [C_RAM_ADDR_WIDTH-1  :0]S_ibuf0_addr                   ; 
 wire         [C_RAM_ADDR_WIDTH-1  :0]S_ibuf1_addr                   ; 
 wire         [C_RAM_DATA_WIDTH-1  :0]S_ibuf0_rdata                  ; 
 wire         [C_RAM_DATA_WIDTH-1  :0]S_ibuf1_rdata                  ; 
+wire         [C_RAM_ADDR_WIDTH-1  :0]S_sbuf0_raddr                  ; 
+wire         [C_RAM_ADDR_WIDTH-1  :0]S_sbuf1_raddr                  ; 
+wire         [C_RAM_LDATA_WIDTH-1 :0]S_sbuf0_rdata                  ; 
+wire         [C_RAM_LDATA_WIDTH-1 :0]S_sbuf1_rdata                  ; 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // initial variable
@@ -301,10 +307,14 @@ u_multi_slide_windows_flatten(
     .O_ibuf1_addr        (S_ibuf1_addr          ), 
     .I_ibuf0_rdata       (S_ibuf0_rdata         ), 
     .I_ibuf1_rdata       (S_ibuf1_rdata         ), 
-    .I_sraddr0           (), 
-    .I_sraddr1           (), 
-    .O_srdata0           (), 
-    .O_srdata1           (), 
+    .I_sraddr0           (S_sbuf0_raddr         ), 
+    .I_sraddr1           (S_sbuf1_raddr         ), 
+    .O_srdata0           (S_sbuf0_rdata         ), 
+    .O_srdata1           (S_sbuf1_rdata         ), 
+    .I_qraddr0           (), 
+    .I_qraddr1           (), 
+    .O_qrdata0           (), 
+    .O_qrdata1           (), 
     .I_ipara_height      (I_ipara_height        ),
     .I_hindex            (S_hindex[1]           ),
     .I_hcnt_odd          (S_hcnt[0]             ),//1,3,5,...active
@@ -315,7 +325,58 @@ u_multi_slide_windows_flatten(
     .I_ipara_ci          (I_ipara_ci            ) 
 );
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// test_msw 
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
+always @(posedge I_clk)begin
+    S_fobase_addr   <= I_base_addr + I_opara_addr_img_out    ;
+end
+
+test_msw #(
+    .C_MEM_STYLE        (C_MEM_STYLE         ),
+    .C_POWER_OF_1ADOTS  (C_POWER_OF_1ADOTS   ),
+    .C_POWER_OF_PECI    (C_POWER_OF_PECI     ),
+    .C_POWER_OF_PECO    (C_POWER_OF_PECO     ),
+    .C_POWER_OF_PEPIX   (C_POWER_OF_PEPIX    ),
+    .C_POWER_OF_PECODIV (C_POWER_OF_PECODIV  ),
+    .C_POWER_OF_RDBPIX  (C_POWER_OF_RDBPIX   ),
+    .C_PEPIX            (C_PEPIX             ),
+    .C_DATA_WIDTH       (C_DATA_WIDTH        ),
+    .C_QIBUF_WIDTH      (C_QIBUF_WIDTH       ),
+    .C_LQIBUF_WIDTH     (C_LQIBUF_WIDTH      ),     
+    .C_CNV_K_WIDTH      (C_CNV_K_WIDTH       ),
+    .C_CNV_CH_WIDTH     (C_CNV_CH_WIDTH      ),
+    .C_DIM_WIDTH        (C_DIM_WIDTH         ),
+    .C_M_AXI_LEN_WIDTH  (C_M_AXI_LEN_WIDTH   ),
+    .C_M_AXI_ADDR_WIDTH (C_M_AXI_ADDR_WIDTH  ),
+    .C_M_AXI_DATA_WIDTH (C_M_AXI_DATA_WIDTH  ),
+    .C_RAM_ADDR_WIDTH   (C_RAM_ADDR_WIDTH    ),
+    .C_RAM_DATA_WIDTH   (C_RAM_DATA_WIDTH    ),
+    .C_RAM_LDATA_WIDTH  (C_RAM_LDATA_WIDTH   ))
+u_test_msw(
+    .I_rst              (I_rst               ),
+    .I_allap_start      (I_ap_start          ),
+    .I_ap_start         (S_mpap_start        ),
+    .O_ap_done          (S_mpap_done         ),
+    .O_sraddr0          (S_sbuf0_raddr       ),//dly=0 
+    .O_sraddr1          (S_sbuf1_raddr       ), 
+    .I_srdata0          (S_sbuf0_rdata       ),//dly=3
+    .I_srdata1          (S_sbuf1_rdata       ),//128*8
+    .I_opara_height     (I_opara_height      ),
+    .I_opara_width      (I_opara_width       ),
+    .I_opara_co         (I_opara_co          ),
+    .I_base_addr        (S_fobase_addr       ),
+    .O_maxi_awlen       (O_fomaxi_awlen      ),
+    .I_maxi_awready     (I_fomaxi_awready    ),   
+    .O_maxi_awvalid     (O_fomaxi_awvalid    ),
+    .O_maxi_awaddr      (O_fomaxi_awaddr     ),
+    .I_maxi_wready      (I_fomaxi_wready     ),
+    .O_maxi_wvalid      (O_fomaxi_wvalid     ),
+    .O_maxi_wdata       (O_fomaxi_wdata      ),       
+    .I_maxi_bvalid      (I_fomaxi_bvalid     ),
+    .O_maxi_bready      (O_fomaxi_bready     )    
+);
 
 // ceil_power_of_2 #(
 //     .C_DIN_WIDTH    (C_DIM_WIDTH        ),
