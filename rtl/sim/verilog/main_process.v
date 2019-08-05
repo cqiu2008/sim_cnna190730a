@@ -55,6 +55,8 @@ input                               I_rst               ,
 input                               I_ap_start          ,
 output                              O_ap_done           ,
 // reg
+input                               I_cnv_en            ,
+input                               I_pool_en           ,
 input       [C_M_AXI_ADDR_WIDTH-1:0]I_base_addr         ,
 input       [C_M_AXI_ADDR_WIDTH-1:0]I_ipara_addr_img_in ,
 input       [     C_CNV_K_WIDTH-1:0]I_kernel_h          ,
@@ -134,6 +136,12 @@ wire         [C_RAM_ADDR_WIDTH-1  :0]S_sbuf0_raddr                  ;
 wire         [C_RAM_ADDR_WIDTH-1  :0]S_sbuf1_raddr                  ; 
 wire         [C_RAM_LDATA_WIDTH-1 :0]S_sbuf0_rdata                  ; 
 wire         [C_RAM_LDATA_WIDTH-1 :0]S_sbuf1_rdata                  ; 
+reg                                  S_mainpost_en                  ;
+reg                                  S_mainpost_cnt_en              ;
+reg                                  S_mainpost_cnt_en_1d           ;
+reg          [       C_DIM_WIDTH-1:0]S_posthaddr                    ;
+reg                                  S_enwr_obuf0                   ;
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // initial variable
@@ -154,6 +162,47 @@ always @(posedge I_clk)begin
     S_hcnt_total_2t     <= 3 + I_kernel_h                       ; 
     S_hcnt_total_3t     <= S_hcnt_total_1t + S_hcnt_total_2t    ; 
     S_hcnt_total        <= S_hcnt_total_3t                      ;
+end
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// calculate ctrl variable
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//S_mainpost_en,S_mainpost_cnt_en
+always @(posedge I_clk)begin
+    S_mainpost_en       <= (S_kh[3] == (I_kernel_h - {{(C_CNV_K_WIDTH-1){1'b0}},1'b1})) ;
+    S_mainpost_cnt_en   <= (S_kh[2] == (I_kernel_h - {{(C_CNV_K_WIDTH-1){1'b0}},1'b1})) ;
+    S_mainpost_cnt_en_1d<= S_mainpost_cnt_en                                            ; 
+end
+
+//S_enwr_obuf0
+always @(posedge I_clk)begin
+    if(I_ap_start)begin
+        if(!S_mainpost_cnt_en && (S_mainpost_cnt_en_1d))begin
+            S_enwr_obuf0    <= ~S_enwr_obuf0  ; 
+        end
+        else begin
+            S_enwr_obuf0    <=  S_enwr_obuf0  ; 
+        end
+    end
+    else begin
+        S_enwr_obuf0        <= 1'b1 ;
+    end
+end
+
+// S_posthaddr
+always @(posedge I_clk)begin
+    if(I_ap_start)begin
+        if(!S_mainpost_cnt_en && (S_mainpost_cnt_en_1d))begin
+            S_posthaddr <= S_posthaddr + {{(C_DIM_WIDTH-1){1'b0}},1'b1}   ;
+        end
+        else begin
+            S_posthaddr <= S_posthaddr                      ; 
+        end
+    end
+    else begin
+        S_posthaddr <= {C_DIM_WIDTH{1'b1}};
+    end
 end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -223,7 +272,6 @@ u_transform_hcnt_wrapper(
     .O_r3kh             (S_kh[3]               ),                  
     .O_r3hindex         (S_hindex[3]           )
 );
-    
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // load_image  

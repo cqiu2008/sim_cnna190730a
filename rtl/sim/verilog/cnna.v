@@ -1162,6 +1162,8 @@ u_main_process(
     .I_ap_start          (ap_start                      ),
     .O_ap_done           (ap_done                       ),
     .I_base_addr         (fiddr_V                       ),
+    .I_cnv_en            (layer_enPara_cnvEn            ),
+    .I_pool_en           (layer_enPara_poolEn           ),
     .I_ipara_addr_img_in (layer_iPara_memAddrImgIn_V    ),
     .I_kernel_h          (layer_cnvPara_kernel_h_V      ),
     .I_kernel_w          (layer_cnvPara_kernel_w_V      ),
