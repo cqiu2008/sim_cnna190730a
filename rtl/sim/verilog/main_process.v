@@ -96,7 +96,6 @@ localparam   C_CI_GROUP       = C_CNV_CH_WIDTH - C_POWER_OF_1ADOTS+1;
 localparam   C_RAM_LDATA_WIDTH= C_RAM_DATA_WIDTH * C_PEPIX          ;
 localparam   C_LQIBUF_WIDTH   = C_QIBUF_WIDTH * C_PEPIX             ;
 
-
 wire         [       C_DIM_WIDTH-1:0]S_hcnt                         ;
 wire         [       C_DIM_WIDTH-1:0]S_hcnt_pre                     ;
 wire         [       C_DIM_WIDTH-1:0]S_hfirst[4]                    ;
@@ -194,10 +193,10 @@ u0_main_cnt_ctrl (
     .I_mpap_done        (S_mpap_done        )    
 );
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // transform_hcnt_wrapper 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+
 transform_hcnt_wrapper #(
     .C_DSIZE           (C_DIM_WIDTH         ),
     .C_CNV_CH_WIDTH    (C_CNV_CH_WIDTH      ), 
@@ -355,6 +354,7 @@ test_msw #(
     .C_RAM_DATA_WIDTH   (C_RAM_DATA_WIDTH    ),
     .C_RAM_LDATA_WIDTH  (C_RAM_LDATA_WIDTH   ))
 u_test_msw(
+    .I_clk              (I_clk               ),
     .I_rst              (I_rst               ),
     .I_allap_start      (I_ap_start          ),
     .I_ap_start         (S_mpap_start        ),

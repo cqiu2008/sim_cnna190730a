@@ -103,15 +103,16 @@ localparam   C_GET_RDATA_AFTER_NCLK = 4                                       ;
 
 wire [       C_NCH_GROUP-1:0]SL_co_group        ;   
 reg  [       C_NCH_GROUP-1:0]SL_co_group_1d     ;   
-reg  [     C_DIM_WIDTH*2-1:0]SL_opare_hw        ;
 reg  [C_M_AXI_LEN_WIDTH-1 :0]SL_maxi_awlen_p1   ;
 wire [C_RAM_ADDR_WIDTH-1  :0]SL_maxi_awlen      ;
 wire                         SR_ndap_start      ;
 reg                          SR_mpap_start      ;
+reg                          SR_mpap_start_1d   ;
 wire [C_M_AXI_DATA_WIDTH-1:0]S_rdata_in_p1      ;
 reg  [C_M_AXI_DATA_WIDTH-1:0]S_rdata_in         ;
 reg                          S_rdata_ffen       ;
-
+reg  [C_M_AXI_ADDR_WIDTH-1:0]SL_base_addr       ; 
+reg  [       C_DIM_WIDTH-1:0]SL_cnt             ;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // initial layer variable
@@ -132,8 +133,7 @@ end
 
 // calcuate SL_maxi_awlen_p1       ;
 always @(posedge I_clk)begin
-    SL_opare_hw     <=  I_opara_height * I_opara_width  ; 
-    SL_maxi_awlen_p1<=  SL_opare_hw * SL_co_group_1d    ; 
+    SL_maxi_awlen_p1<=  I_opara_width * SL_co_group_1d    ; 
 end
 
 align #(
@@ -143,6 +143,28 @@ u_maxi_awlen (
     .I_din      (SL_maxi_awlen_p1   ),
     .O_dout     (SL_maxi_awlen      )
 );
+
+// calcuate SL_base_addr;
+//reg  [       C_DIM_WIDTH-1:0]SL_cnt             ;
+always @(posedge I_clk)begin
+    if(I_allap_start)begin
+        
+        if(SR_mpap_start_1d && (~SR_mpap_start))begin
+            if(SL_cnt <(I_opara_height-1))begin
+                SL_cnt   <= SL_cnt + {{(C_DIM_WIDTH-1){1'b0}},1'b1};
+            end
+        end
+        
+    end
+    else begin
+        SL_cnt   <= {C_DIM_WIDTH{1'b0}};
+    end
+end
+
+always @(posedge I_clk)begin
+    SR_mpap_start_1d    <= SR_mpap_start ; 
+    SL_base_addr        <= I_base_addr + SL_cnt * SL_maxi_awlen_p1; 
+end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // generate dly ap_start 
@@ -207,7 +229,7 @@ U0_rambus2axibus(
 .O_ap_done       (O_ap_done         ),
 .O_ap_idle       (                  ),
 .O_ap_ready      (                  ),
-.I_base_addr     (I_base_addr       ),
+.I_base_addr     (SL_base_addr      ),
 .I_len           (SL_maxi_awlen     ),
 .O_raddr         (O_sraddr0         ),
 .O_rd            (                  ),

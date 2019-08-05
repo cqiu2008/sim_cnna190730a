@@ -205,7 +205,7 @@ wire [     C_QIBUF_WIDTH-1:0]SC_qrdata0[C_RDBPIX][C_PEPIX]              ;
 wire [     C_QIBUF_WIDTH-1:0]SC_qrdata1[C_RDBPIX][C_PEPIX]              ;                                  
 wire [    C_LQIBUF_WIDTH-1:0]SC_lqrdata0[C_RDBPIX]                      ;
 wire [    C_LQIBUF_WIDTH-1:0]SC_lqrdata1[C_RDBPIX]                      ;
-
+reg                          SR_ndswap_done_1d                          ;//dly=31
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // initial layer variable
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -409,8 +409,9 @@ u_ndswap_done(
 );
 
 always @(posedge I_clk)begin
-    SR_no_suite_done  <= (SR_ndap_start_shift[3:2]==2'b01) && (~SR_swap_start)  ; 
-    O_ap_done         <= SR_no_suite_done || SR_ndswap_done                     ; 
+    SR_ndswap_done_1d <= SR_ndswap_done                                             ;
+    SR_no_suite_done  <= (SR_ndap_start_shift[3:2]==2'b01) && (~SR_swap_start)      ; 
+    O_ap_done         <= SR_no_suite_done || (SR_ndswap_done&&(~SR_ndswap_done_1d)) ; 
 end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -781,8 +782,8 @@ generate
     begin:rdata_gen
         for(ws_idr=0;ws_idr<C_RDBPIX;ws_idr=ws_idr+1)begin:rs1
             for(p_idr=0;p_idr<C_PEPIX;p_idr=p_idr+1)begin:rs2
-                assign SC_lrdata0[ws_idr][(p_idr+1)*C_PEPIX-1:p_idr*C_PEPIX] = SC_rdata0[ws_idr][p_idr];
-                assign SC_lrdata1[ws_idr][(p_idr+1)*C_PEPIX-1:p_idr*C_PEPIX] = SC_rdata1[ws_idr][p_idr];
+                assign SC_lrdata0[ws_idr][(p_idr+1)*C_M_AXI_DATA_WIDTH-1:p_idr*C_M_AXI_DATA_WIDTH] = SC_rdata0[ws_idr][p_idr];
+                assign SC_lrdata1[ws_idr][(p_idr+1)*C_M_AXI_DATA_WIDTH-1:p_idr*C_M_AXI_DATA_WIDTH] = SC_rdata1[ws_idr][p_idr];
             end
         end
     end
@@ -900,8 +901,8 @@ generate
     begin:idqrdata_gen
         for(ws_idqr=0;ws_idqr<C_RDBPIX;ws_idqr=ws_idqr+1)begin:rs1
             for(p_idqr=0;p_idqr<C_PEPIX;p_idqr=p_idqr+1)begin:rs2
-                assign SC_lqrdata0[ws_idqr][(p_idqr+1)*C_PEPIX-1:p_idqr*C_PEPIX] = SC_qrdata0[ws_idqr][p_idqr];
-                assign SC_lqrdata1[ws_idqr][(p_idqr+1)*C_PEPIX-1:p_idqr*C_PEPIX] = SC_qrdata1[ws_idqr][p_idqr];
+                assign SC_lqrdata0[ws_idqr][(p_idqr+1)*C_QIBUF_WIDTH-1:p_idqr*C_QIBUF_WIDTH] = SC_qrdata0[ws_idqr][p_idqr];
+                assign SC_lqrdata1[ws_idqr][(p_idqr+1)*C_QIBUF_WIDTH-1:p_idqr*C_QIBUF_WIDTH] = SC_qrdata1[ws_idqr][p_idqr];
             end
         end
     end
