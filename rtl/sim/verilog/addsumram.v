@@ -30,43 +30,48 @@
 //Asynchronous Interface: none 
 //END_HEADER------------------------------------------------------------------
 `timescale 1 ns / 100 ps
-module sdpram #(
+module addsumram #(
 parameter   
-    C_MEM_STYLE  = "block",
-    C_DSIZE = 32          ,
-    C_ASIZE = 10      
+    C_MEM_STYLE     = "block"   ,
+    C_DSIZE         = 32        ,
+    C_ASIZE         = 10        ,
+    C_LENSIZE       = 9          
 )(
-input                               I_wclk      ,
-input       [C_ASIZE-1           :0]I_waddr     ,
-input       [C_DSIZE-1           :0]I_wdata     ,
-input                               I_ce        ,
-input                               I_wr        ,
-input                               I_rclk      ,
-input       [C_ASIZE-1           :0]I_raddr     ,
-input                               I_rd        ,
-output reg  [C_DSIZE-1           :0]O_rdata         
+input                               I_clk           ,
+// ctrl bus
+input                               I_first_flag    ,
+input       [C_LENSIZE-1         :0]I_len           ,
+input                               I_dv_p2         ,
+// mem bus
+input       [C_DSIZE-1           :0]I_din           ,
+input                               I_dv            ,
+input       [C_ASIZE-1           :0]I_raddr         ,
+input                               I_rd            ,
+output reg  [C_DSIZE-1           :0]O_rdata             
 );
 
-initial begin
-#0  O_rdata <= {C_DSIZE{1'b0}};
-end
+//reg  [C_DSIZE-1           :0]I_wdata         ,
+//reg                          I_wr            ,
+//reg  [C_ASIZE-1           :0]I_raddr         ,
+//reg                          I_rd            ,
+//reg  [C_DSIZE-1           :0]O_rdata             
 
-localparam C_DEPTH = 1 << C_ASIZE;
-(* ram_style=C_MEM_STYLE *)reg [C_DSIZE-1:0] mem [0:C_DEPTH-1];
+sdpram #(
+    .C_MEM_STYLE (C_MEM_STYLE   ),
+    .C_DSIZE     (C_DSIZE       ),
+    .C_ASIZE     (C_ASIZE       ))
+u_sdpram(
+    .I_wclk      (I_clk         ),
+    .I_waddr     (I_waddr       ),
+    .I_wdata     (I_wdata       ),
+    .I_ce        (1'b1          ),
+    .I_wr        (I_wr          ),
+    .I_rclk      (I_clk         ),
+    .I_raddr     (I_raddr       ),
+    .I_rd        (I_rd          ),
+    .O_rdata     (O_rdata       )    
+);
 
-always @(posedge I_wclk)begin
-    if(I_wr && I_ce)begin
-        mem[I_waddr] <= I_wdata;
-    end
-end
 
-always @(posedge I_rclk)begin
-    if(I_rd && I_ce)begin
-        O_rdata <= mem[I_raddr] ;
-    end
-    else begin
-        O_rdata <= O_rdata      ;
-    end
-end
 
 endmodule

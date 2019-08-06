@@ -50,8 +50,8 @@ output reg                          O_ap_ready      ,
 input       [C_M_AXI_ADDR_WIDTH-1:0]I_base_addr     ,
 input       [C_RAM_ADDR_WIDTH-1  :0]I_len           ,
 // ram bus 
-output reg  [C_RAM_ADDR_WIDTH-1  :0]O_raddr         ,
-output reg                          O_rd            ,
+output      [C_RAM_ADDR_WIDTH-1  :0]O_raddr         ,
+output                              O_rd            ,
 output                              O_rdata_ffen    ,
 input       [C_RAM_DATA_WIDTH-1  :0]I_rdata         ,///3clk after O_rd
 

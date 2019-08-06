@@ -48,7 +48,7 @@ genvar idx;
 // initial  
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-wire [C_SPLIT_WIDTH-1:0]S_data_tmp[C_SPLIT_NUM];
+wire [C_SPLIT_WIDTH-1:0]S_data_tmp[0:C_SPLIT_NUM-1];
 
 generate
     begin:iemem_data_tmp_initial
@@ -62,7 +62,7 @@ endgenerate
 // S_data_tmp_t1  
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-reg [C_SPLIT_WIDTH:0]S_data_tmp_t1[C_SPLIT_NUM/2];//8
+reg [C_SPLIT_WIDTH:0]S_data_tmp_t1[0:C_SPLIT_NUM/2-1];//8
 
 generate
     begin:iemem_data_tmp_t1
@@ -78,7 +78,7 @@ endgenerate
 // S_data_tmp_t2
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-reg  [C_SPLIT_WIDTH+1:0]S_data_tmp_t2[C_SPLIT_NUM/4];//4
+reg  [C_SPLIT_WIDTH+1:0]S_data_tmp_t2[0:C_SPLIT_NUM/4-1];//4
 
 generate
     begin:iemem_data_tmp_t2
@@ -94,7 +94,7 @@ endgenerate
 // S_data_tmp_t3
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-reg  [C_SPLIT_WIDTH+2:0]S_data_tmp_t3[C_SPLIT_NUM/8];//2
+reg  [C_SPLIT_WIDTH+2:0]S_data_tmp_t3[0:C_SPLIT_NUM/8-1];//2
 
 generate
     begin:iemem_data_tmp_t3

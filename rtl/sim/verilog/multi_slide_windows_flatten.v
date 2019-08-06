@@ -102,109 +102,109 @@ localparam   C_PADDING        = 6                                       ;
 //        such as SC_id , ... and so on 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-wire                         SR_ndap_start                              ;
-reg  [                   3:0]SR_ndap_start_shift                        ;
-wire                         SR_hindex_suite                            ;
-wire [       C_DIM_WIDTH-1:0]SR_sbuf0_index                             ; 
-wire [       C_DIM_WIDTH-1:0]SR_sbuf1_index                             ; 
-reg                          SR_sbuf0_index_neq                         ; 
-reg                          SR_sbuf1_index_neq                         ; 
-reg                          SR_swap_start                              ;
-wire                         SR_ndswap_start                            ;
-reg                          SR_swap_done                               ;
-wire                         SR_ndswap_done                             ;//dly=31
-reg                          SR_sbuf0_en                                ;
-reg                          SR_sbuf1_en                                ;
-reg                          SR_no_suite_done                           ;
-reg                          SL_split_en                                ;
-reg  [     C_CNV_K_WIDTH-1:0]SL_pepix_stride_w                          ;
-reg  [     C_CNV_K_WIDTH-1:0]SL_pesub1pix_stride_w                      ;
-reg  [       C_DIM_WIDTH-1:0]SL_pesub1pix_stride_w_addkernel            ;
-wire [  C_WOT_DIV_RDBPIX-1:0]SL_pesub1pix_stride_w_addkernel_div_rdb    ;
-reg  [       C_DIM_WIDTH-1:0]SL_wo_total1                               ;
-reg  [       C_DIM_WIDTH-1:0]SL_wo_total2                               ;
-wire [       C_DIM_WIDTH-1:0]SL_wo_total3                               ;
-reg  [       C_DIM_WIDTH-1:0]SL_wo_total                                ;
-wire [   C_WOT_DIV_PEPIX-1:0]SL_wot_div_pepix                           ;
-wire [  C_WOT_DIV_RDBPIX-1:0]SL_wot_div_rdbpix                          ;
-wire [       C_DIM_WIDTH-1:0]SL_wpart_t                                 ;
-reg  [       C_DIM_WIDTH-1:0]SL_wpart                                   ;
-reg  [       C_DIM_WIDTH-1:0]SC_id[C_RDBPIX]                            ;
-wire [       C_DIM_WIDTH-1:0]SC_ndid[C_RDBPIX]                          ;
-reg                          SC_id_more0[C_RDBPIX]                      ;
-reg  [       C_DIM_WIDTH-1:0]SC_windex[C_RDBPIX]                        ;//dly=21
-reg  [       C_DIM_WIDTH-1:0]SC_ndwindex[C_RDBPIX]                      ;//dly=26
-reg                          SC_windex_suite[C_RDBPIX][C_PEPIX]         ;//dly=28
-wire                         SC_ndwindex_suite[C_RDBPIX][C_PEPIX]       ;//dly=30
-reg  [       C_DIM_WIDTH-1:0]SC_wremainder[C_RDBPIX]                    ;
-reg  [       C_DIM_WIDTH-1:0]SL_wthreshold[C_PEPIX]                     ;
-reg  [     C_CNV_K_PEPIX-1:0]SL_p_stride_w[C_PEPIX]                     ;
-reg  [       C_DIM_WIDTH-1:0]SL_wthreshold_t2[C_PEPIX]                  ;
-reg                          SC_rem_less_thr[C_RDBPIX][C_PEPIX]         ;
-reg  [       C_DIM_WIDTH-1:0]SC_idforpix[C_RDBPIX][C_PEPIX]             ;
-reg  [       C_DIM_WIDTH-1:0]SC_pfirst[C_RDBPIX][C_PEPIX]               ;
-reg  [     C_CNV_K_WIDTH-1:0]SC_k[C_RDBPIX][C_PEPIX]                    ;
-reg  [     C_CNV_K_WIDTH-1:0]SC_k_t1[C_RDBPIX][C_PEPIX]                 ;
-reg                          SC_k_suite[C_RDBPIX][C_PEPIX]              ;
-reg  [       C_DIM_WIDTH-1:0]SC_depth[C_RDBPIX][C_PEPIX]                ;//dly=28
-reg  [       C_DIM_WIDTH-1:0]SC_ndepth[C_RDBPIX][C_PEPIX]               ;//dly=30
-reg  [       C_DIM_WIDTH-1:0]SC_depth_t1[C_RDBPIX][C_PEPIX]             ;
-reg  [       C_DIM_WIDTH-1:0]SC_depth_t2[C_RDBPIX][C_PEPIX]             ;
-reg  [       C_DIM_WIDTH-1:0]SC_depth_t2a[C_RDBPIX][C_PEPIX]            ;
-reg  [       C_DIM_WIDTH-1:0]SC_depth_t2b[C_RDBPIX][C_PEPIX]            ;
-reg  [       C_DIM_WIDTH-1:0]SC_depth_t3[C_RDBPIX][C_PEPIX]             ;
-reg  [  C_RAM_ADDR_WIDTH-1:0]SC_ibufaddr_t1[C_RDBPIX]                   ;
-reg  [  C_RAM_ADDR_WIDTH-1:0]SC_ibufaddr[C_RDBPIX]                      ;
-reg  [     C_QIBUF_WIDTH-1:0]SC_sum[C_RDBPIX]                           ;
-wire [       C_NCH_GROUP-1:0]SC_cig_cnt                                 ;
-wire [       C_NCH_GROUP-1:0]SC_ndcig_cnt                               ;
-wire [       C_NCH_GROUP-1:0]SC_n1dcig_cnt                              ;
-wire [       C_NCH_GROUP-1:0]SL_ci_group                                ;   
-reg  [       C_NCH_GROUP-1:0]SL_ci_group_1d                             ;   
-reg                          SC_cig_valid                               ;
-wire                         SC_cig_over_flag                           ; 
-wire [       C_DIM_WIDTH-1:0]SC_woc_cnt                                 ;
-reg  [       C_DIM_WIDTH-1:0]SL_wo_consume                              ;
-wire                         SC_woc_valid                               ;
-wire                         SC_woc_over_flag                           ; 
-wire [       C_DIM_WIDTH-1:0]SC_wog_cnt                                 ;
-wire [       C_DIM_WIDTH-1:0]SC_ndwog_cnt                               ;
-reg  [       C_DIM_WIDTH-1:0]SL_wo_group                                ;
-wire                         SC_wog_valid                               ;
-wire                         SC_wog_over_flag                           ; 
-reg  [       C_DIM_WIDTH-1:0]SC_w                                       ;
-reg  [       C_DIM_WIDTH-1:0]SC_wws[C_RDBPIX]                           ;
-wire [       C_DIM_WIDTH-1:0]SC_ndwws[C_RDBPIX]                         ;
-wire [       C_DIM_WIDTH-1:0]SC_n1dwws[C_RDBPIX]                        ;
-wire [       C_DIM_WIDTH-1:0]SC_wws_divwpart[C_RDBPIX]                  ;
-wire [       C_DIM_WIDTH-1:0]SC_wws_remwpart[C_RDBPIX]                  ;
-wire [       C_DIM_WIDTH-1:0]SC_woc_rdbpix                              ;
-wire [       C_DIM_WIDTH-1:0]SC_wog_rdbpix                              ;
-wire [       C_DIM_WIDTH-1:0]SC_wog_pepix                               ;
-wire [       C_DIM_WIDTH-1:0]SC_wog_pe_or_rdb_pix                       ;
-reg  [     C_CNV_K_GROUP-1:0]SL_kernel_w_ci_group                       ;
-wire [C_RAM_DATA_WIDTH-1  :0]SC_ibuf_rdata[C_RDBPIX]                    ;//dly=28
-wire [C_RAM_DATA_WIDTH-1  :0]SC_ndibuf_rdata[C_RDBPIX]                  ;//dly=28
-reg  [C_RAM_ADDR_WIDTH-1  :0]SC_addr0[C_RDBPIX][C_PEPIX]                ;//dly=29
-reg  [C_RAM_ADDR_WIDTH-1  :0]SC_addr1[C_RDBPIX][C_PEPIX]                ;
-reg                          SC_wr0[C_RDBPIX][C_PEPIX]                  ;//dly=29       
-reg                          SC_wr1[C_RDBPIX][C_PEPIX]                  ;                                     
-reg  [C_RAM_DATA_WIDTH-1  :0]SC_wdata0[C_RDBPIX][C_PEPIX]               ;
-reg  [C_RAM_DATA_WIDTH-1  :0]SC_wdata1[C_RDBPIX][C_PEPIX]               ;
-wire [C_RAM_DATA_WIDTH-1  :0]SC_rdata0[C_RDBPIX][C_PEPIX]               ;                                  
-wire [C_RAM_DATA_WIDTH-1  :0]SC_rdata1[C_RDBPIX][C_PEPIX]               ;                                  
-wire [C_RAM_LDATA_WIDTH-1 :0]SC_lrdata0[C_RDBPIX]                       ;
-wire [C_RAM_LDATA_WIDTH-1 :0]SC_lrdata1[C_RDBPIX]                       ;
-reg  [C_RAM_ADDR_WIDTH-1  :0]SC_qaddr0[C_RDBPIX][C_PEPIX]               ;//dly=
-reg  [C_RAM_ADDR_WIDTH-1  :0]SC_qaddr1[C_RDBPIX][C_PEPIX]               ;
-wire                         SC_qwr0[C_RDBPIX][C_PEPIX]                 ;//dly=31    
-wire                         SC_qwr1[C_RDBPIX][C_PEPIX]                 ;                                     
-reg  [     C_QIBUF_WIDTH-1:0]SC_qwdata0[C_RDBPIX][C_PEPIX]              ;
-reg  [     C_QIBUF_WIDTH-1:0]SC_qwdata1[C_RDBPIX][C_PEPIX]              ;
-wire [     C_QIBUF_WIDTH-1:0]SC_qrdata0[C_RDBPIX][C_PEPIX]              ;                                  
-wire [     C_QIBUF_WIDTH-1:0]SC_qrdata1[C_RDBPIX][C_PEPIX]              ;                                  
-wire [    C_LQIBUF_WIDTH-1:0]SC_lqrdata0[C_RDBPIX]                      ;
-wire [    C_LQIBUF_WIDTH-1:0]SC_lqrdata1[C_RDBPIX]                      ;
+wire                         SR_ndap_start                                  ;
+reg  [                   3:0]SR_ndap_start_shift                            ;
+wire                         SR_hindex_suite                                ;
+wire [       C_DIM_WIDTH-1:0]SR_sbuf0_index                                 ; 
+wire [       C_DIM_WIDTH-1:0]SR_sbuf1_index                                 ; 
+reg                          SR_sbuf0_index_neq                             ; 
+reg                          SR_sbuf1_index_neq                             ; 
+reg                          SR_swap_start                                  ;
+wire                         SR_ndswap_start                                ;
+reg                          SR_swap_done                                   ;
+wire                         SR_ndswap_done                                 ;//dly=31
+reg                          SR_sbuf0_en                                    ;
+reg                          SR_sbuf1_en                                    ;
+reg                          SR_no_suite_done                               ;
+reg                          SL_split_en                                    ;
+reg  [     C_CNV_K_WIDTH-1:0]SL_pepix_stride_w                              ;
+reg  [     C_CNV_K_WIDTH-1:0]SL_pesub1pix_stride_w                          ;
+reg  [       C_DIM_WIDTH-1:0]SL_pesub1pix_stride_w_addkernel                ;
+wire [  C_WOT_DIV_RDBPIX-1:0]SL_pesub1pix_stride_w_addkernel_div_rdb        ;
+reg  [       C_DIM_WIDTH-1:0]SL_wo_total1                                   ;
+reg  [       C_DIM_WIDTH-1:0]SL_wo_total2                                   ;
+wire [       C_DIM_WIDTH-1:0]SL_wo_total3                                   ;
+reg  [       C_DIM_WIDTH-1:0]SL_wo_total                                    ;
+wire [   C_WOT_DIV_PEPIX-1:0]SL_wot_div_pepix                               ;
+wire [  C_WOT_DIV_RDBPIX-1:0]SL_wot_div_rdbpix                              ;
+wire [       C_DIM_WIDTH-1:0]SL_wpart_t                                     ;
+reg  [       C_DIM_WIDTH-1:0]SL_wpart                                       ;
+reg  [       C_DIM_WIDTH-1:0]SC_id[0:C_RDBPIX-1]                            ;
+wire [       C_DIM_WIDTH-1:0]SC_ndid[0:C_RDBPIX-1]                          ;
+reg                          SC_id_more0[0:C_RDBPIX-1]                      ;
+reg  [       C_DIM_WIDTH-1:0]SC_windex[0:C_RDBPIX-1]                        ;//dly=21
+wire [       C_DIM_WIDTH-1:0]SC_ndwindex[0:C_RDBPIX-1]                      ;//dly=26
+wire                         SC_windex_suite[0:C_RDBPIX-1][0:C_PEPIX-1]     ;//dly=28
+wire                         SC_ndwindex_suite[0:C_RDBPIX-1][0:C_PEPIX-1]   ;//dly=30
+reg  [       C_DIM_WIDTH-1:0]SC_wremainder[0:C_RDBPIX-1]                    ;
+reg  [       C_DIM_WIDTH-1:0]SL_wthreshold[0:C_PEPIX-1]                     ;
+reg  [     C_CNV_K_PEPIX-1:0]SL_p_stride_w[0:C_PEPIX-1]                     ;
+reg  [       C_DIM_WIDTH-1:0]SL_wthreshold_t2[0:C_PEPIX-1]                  ;
+reg                          SC_rem_less_thr[0:C_RDBPIX-1][0:C_PEPIX-1]     ;
+reg  [       C_DIM_WIDTH-1:0]SC_idforpix[0:C_RDBPIX-1][0:C_PEPIX-1]         ;
+reg  [       C_DIM_WIDTH-1:0]SC_pfirst[0:C_RDBPIX-1][0:C_PEPIX-1]           ;
+reg  [     C_CNV_K_WIDTH-1:0]SC_k[0:C_RDBPIX-1][0:C_PEPIX-1]                ;
+reg  [     C_CNV_K_WIDTH-1:0]SC_k_t1[0:C_RDBPIX-1][0:C_PEPIX-1]             ;
+wire                         SC_k_suite[0:C_RDBPIX-1][0:C_PEPIX-1]          ;
+reg  [       C_DIM_WIDTH-1:0]SC_depth[0:C_RDBPIX-1][0:C_PEPIX-1]            ;//dly=28
+wire [       C_DIM_WIDTH-1:0]SC_ndepth[0:C_RDBPIX-1][0:C_PEPIX-1]           ;//dly=30
+reg  [       C_DIM_WIDTH-1:0]SC_depth_t1[0:C_RDBPIX-1][0:C_PEPIX-1]         ;
+reg  [       C_DIM_WIDTH-1:0]SC_depth_t2[0:C_RDBPIX-1][0:C_PEPIX-1]         ;
+reg  [       C_DIM_WIDTH-1:0]SC_depth_t2a[0:C_RDBPIX-1][0:C_PEPIX-1]        ;
+reg  [       C_DIM_WIDTH-1:0]SC_depth_t2b[0:C_RDBPIX-1][0:C_PEPIX-1]        ;
+reg  [       C_DIM_WIDTH-1:0]SC_depth_t3[0:C_RDBPIX-1][0:C_PEPIX-1]         ;
+reg  [  C_RAM_ADDR_WIDTH-1:0]SC_ibufaddr_t1[0:C_RDBPIX-1]                   ;
+reg  [  C_RAM_ADDR_WIDTH-1:0]SC_ibufaddr[0:C_RDBPIX-1]                      ;
+wire [     C_QIBUF_WIDTH-1:0]SC_sum[0:C_RDBPIX-1]                           ;
+wire [       C_NCH_GROUP-1:0]SC_cig_cnt                                     ;
+wire [       C_NCH_GROUP-1:0]SC_ndcig_cnt                                   ;
+wire [       C_NCH_GROUP-1:0]SC_n1dcig_cnt                                  ;
+wire [       C_NCH_GROUP-1:0]SL_ci_group                                    ;   
+reg  [       C_NCH_GROUP-1:0]SL_ci_group_1d                                 ;   
+reg                          SC_cig_valid                                   ;
+wire                         SC_cig_over_flag                               ; 
+wire [       C_DIM_WIDTH-1:0]SC_woc_cnt                                     ;
+reg  [       C_DIM_WIDTH-1:0]SL_wo_consume                                  ;
+wire                         SC_woc_valid                                   ;
+wire                         SC_woc_over_flag                               ; 
+wire [       C_DIM_WIDTH-1:0]SC_wog_cnt                                     ;
+wire [       C_DIM_WIDTH-1:0]SC_ndwog_cnt                                   ;
+reg  [       C_DIM_WIDTH-1:0]SL_wo_group                                    ;
+wire                         SC_wog_valid                                   ;
+wire                         SC_wog_over_flag                               ; 
+reg  [       C_DIM_WIDTH-1:0]SC_w                                           ;
+reg  [       C_DIM_WIDTH-1:0]SC_wws[0:C_RDBPIX-1]                           ;
+wire [       C_DIM_WIDTH-1:0]SC_ndwws[0:C_RDBPIX-1]                         ;
+wire [       C_DIM_WIDTH-1:0]SC_n1dwws[0:C_RDBPIX-1]                        ;
+wire [       C_DIM_WIDTH-1:0]SC_wws_divwpart[0:C_RDBPIX-1]                  ;
+wire [       C_DIM_WIDTH-1:0]SC_wws_remwpart[0:C_RDBPIX-1]                  ;
+wire [       C_DIM_WIDTH-1:0]SC_woc_rdbpix                                  ;
+wire [       C_DIM_WIDTH-1:0]SC_wog_rdbpix                                  ;
+wire [       C_DIM_WIDTH-1:0]SC_wog_pepix                                   ;
+wire [       C_DIM_WIDTH-1:0]SC_wog_pe_or_rdb_pix                           ;
+reg  [     C_CNV_K_GROUP-1:0]SL_kernel_w_ci_group                           ;
+wire [C_RAM_DATA_WIDTH-1  :0]SC_ibuf_rdata[0:C_RDBPIX-1]                    ;//dly=28
+wire [C_RAM_DATA_WIDTH-1  :0]SC_ndibuf_rdata[0:C_RDBPIX-1]                  ;//dly=28
+reg  [C_RAM_ADDR_WIDTH-1  :0]SC_addr0[0:C_RDBPIX-1][0:C_PEPIX-1]                ;//dly=29
+reg  [C_RAM_ADDR_WIDTH-1  :0]SC_addr1[0:C_RDBPIX-1][0:C_PEPIX-1]                ;
+reg                          SC_wr0[0:C_RDBPIX-1][0:C_PEPIX-1]                  ;//dly=29       
+reg                          SC_wr1[0:C_RDBPIX-1][0:C_PEPIX-1]                  ;                                     
+reg  [C_RAM_DATA_WIDTH-1  :0]SC_wdata0[0:C_RDBPIX-1][0:C_PEPIX-1]               ;
+reg  [C_RAM_DATA_WIDTH-1  :0]SC_wdata1[0:C_RDBPIX-1][0:C_PEPIX-1]               ;
+wire [C_RAM_DATA_WIDTH-1  :0]SC_rdata0[0:C_RDBPIX-1][0:C_PEPIX-1]               ;                                  
+wire [C_RAM_DATA_WIDTH-1  :0]SC_rdata1[0:C_RDBPIX-1][0:C_PEPIX-1]               ;                                  
+wire [C_RAM_LDATA_WIDTH-1 :0]SC_lrdata0[0:C_RDBPIX-1]                       ;
+wire [C_RAM_LDATA_WIDTH-1 :0]SC_lrdata1[0:C_RDBPIX-1]                       ;
+reg  [C_RAM_ADDR_WIDTH-1  :0]SC_qaddr0[0:C_RDBPIX-1][0:C_PEPIX-1]               ;//dly=
+reg  [C_RAM_ADDR_WIDTH-1  :0]SC_qaddr1[0:C_RDBPIX-1][0:C_PEPIX-1]               ;
+wire                         SC_qwr0[0:C_RDBPIX-1][0:C_PEPIX-1]                 ;//dly=31    
+wire                         SC_qwr1[0:C_RDBPIX-1][0:C_PEPIX-1]                 ;                                     
+reg  [     C_QIBUF_WIDTH-1:0]SC_qwdata0[0:C_RDBPIX-1][0:C_PEPIX-1]              ;
+reg  [     C_QIBUF_WIDTH-1:0]SC_qwdata1[0:C_RDBPIX-1][0:C_PEPIX-1]              ;
+wire [     C_QIBUF_WIDTH-1:0]SC_qrdata0[0:C_RDBPIX-1][0:C_PEPIX-1]              ;                                  
+wire [     C_QIBUF_WIDTH-1:0]SC_qrdata1[0:C_RDBPIX-1][0:C_PEPIX-1]              ;                                  
+wire [    C_LQIBUF_WIDTH-1:0]SC_lqrdata0[0:C_RDBPIX-1]                      ;
+wire [    C_LQIBUF_WIDTH-1:0]SC_lqrdata1[0:C_RDBPIX-1]                      ;
 reg                          SR_ndswap_done_1d                          ;//dly=31
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // initial layer variable
@@ -441,7 +441,7 @@ assign SC_wog_valid = SC_woc_valid && SC_woc_over_flag ;
 
 cm_cnt #(
     .C_WIDTH(C_NCH_GROUP))
-U0_loop1_cig_cnt (
+u_loop1_cig_cnt (
 .I_clk              (I_clk                  ),
 .I_cnt_en           (SR_swap_start          ),
 .I_lowest_cnt_valid (SC_cig_valid           ),
@@ -453,7 +453,7 @@ U0_loop1_cig_cnt (
 
 cm_cnt #(
     .C_WIDTH(C_DIM_WIDTH))
-U0_loop2_woc_cnt(
+u_loop2_woc_cnt(
 .I_clk              (I_clk                  ),
 .I_cnt_en           (SR_swap_start          ),
 .I_lowest_cnt_valid (SC_cig_valid           ),
@@ -465,7 +465,7 @@ U0_loop2_woc_cnt(
 
 cm_cnt #(
     .C_WIDTH(C_DIM_WIDTH))
-U0_loop3_wog_cnt(
+u_loop3_wog_cnt(
 .I_clk              (I_clk                  ),
 .I_cnt_en           (SR_swap_start          ),
 .I_lowest_cnt_valid (SC_cig_valid           ),

@@ -57,7 +57,7 @@ input                               I_clk               ,
 input                               I_rst               ,
 input                               I_allap_start       ,
 input                               I_ap_start          ,
-output reg                          O_ap_done           ,
+output                              O_ap_done           ,
 //sbuf
 output      [C_RAM_ADDR_WIDTH-1  :0]O_sraddr0           ,//dly=0
 output      [C_RAM_ADDR_WIDTH-1  :0]O_sraddr1           , 
@@ -110,7 +110,7 @@ reg                          SR_mpap_start      ;
 reg                          SR_mpap_start_1d   ;
 wire [C_M_AXI_DATA_WIDTH-1:0]S_rdata_in_p1      ;
 reg  [C_M_AXI_DATA_WIDTH-1:0]S_rdata_in         ;
-reg                          S_rdata_ffen       ;
+wire                         S_rdata_ffen       ;
 reg  [C_M_AXI_ADDR_WIDTH-1:0]SL_base_addr       ; 
 reg  [       C_DIM_WIDTH-1:0]SL_cnt             ;
 

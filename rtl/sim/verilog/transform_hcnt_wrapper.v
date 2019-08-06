@@ -57,13 +57,13 @@ output reg  [          C_DSIZE-1:0]O_r3kh           ,
 output reg  [          C_DSIZE-1:0]O_r3hindex       
 );
 
-reg    [       C_DSIZE-1:0]S_reg_hfirst[2][4]   ;
-reg    [       C_DSIZE-1:0]S_reg_kh[2][4]       ;
-reg    [       C_DSIZE-1:0]S_reg_hindex[2][4]   ;
+reg    [       C_DSIZE-1:0]S_reg_hfirst[0:1][0:3]   ;
+reg    [       C_DSIZE-1:0]S_reg_kh[0:1][0:3]       ;
+reg    [       C_DSIZE-1:0]S_reg_hindex[0:1][0:3]   ;
 
-wire   [       C_DSIZE-1:0]S_hfirst[4]          ;
-wire   [       C_DSIZE-1:0]S_kh[4]              ;
-wire   [       C_DSIZE-1:0]S_hindex[4]          ;
+wire   [       C_DSIZE-1:0]S_hfirst[0:3]          ;
+wire   [       C_DSIZE-1:0]S_kh[0:3]              ;
+wire   [       C_DSIZE-1:0]S_hindex[0:3]          ;
 wire                       S_ndap_start         ;
 reg    [               3:0]S_ndap_start_shift   ;
 reg                        S_ap_start_1d        ; 

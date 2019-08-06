@@ -100,9 +100,9 @@ localparam   C_LQIBUF_WIDTH   = C_QIBUF_WIDTH * C_PEPIX             ;
 
 wire         [       C_DIM_WIDTH-1:0]S_hcnt                         ;
 wire         [       C_DIM_WIDTH-1:0]S_hcnt_pre                     ;
-wire         [       C_DIM_WIDTH-1:0]S_hfirst[4]                    ;
-wire         [       C_DIM_WIDTH-1:0]S_kh[4]                        ;
-wire         [       C_DIM_WIDTH-1:0]S_hindex[4]                    ;
+wire         [       C_DIM_WIDTH-1:0]S_hfirst[0:3]                  ;
+wire         [       C_DIM_WIDTH-1:0]S_kh[0:3]                      ;
+wire         [       C_DIM_WIDTH-1:0]S_hindex[0:3]                  ;
 reg                                  S_en_wr_obuf0  = 1'b1          ;
 reg                                  S_obuf_init_ok = 1'b0          ;
 wire         [        C_CI_GROUP-1:0]S_ipara_ci_group               ;

@@ -319,7 +319,7 @@ assign S_dly[C_D0W+C_D1W+C_D2W+C_D3W+C_D4W-1        :C_D0W+C_D1W+C_D2W+C_D3W    
 assign S_dly[C_D0W+C_D1W+C_D2W+C_D3W+C_D4W+C_D5W-1  :C_D0W+C_D1W+C_D2W+C_D3W+C_D4W  ] = S_filter_cnt    ; 
 
 always @(posedge I_clk)begin
-    S_1dly <=  S_dly;
+    S_1dly <= S_dly ;
     S_2dly <= S_1dly;
     S_3dly <= S_2dly;
     S_ndly <= S_3dly;
