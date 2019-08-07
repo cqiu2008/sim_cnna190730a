@@ -73,7 +73,7 @@ end
 always @(posedge I_clk)begin
     if(I_dven)begin
         if(I_dv_pre4)begin
-            S_rcnt  <=  S_rcnt + {(C_ASIZE-1){1'b0},1'b1}   ;
+            S_rcnt  <=  S_rcnt + {{(C_ASIZE-1){1'b0}},1'b1} ;
         end
         else begin
             S_rcnt  <=  S_rcnt                              ; 
@@ -110,7 +110,7 @@ assign S_sum     = S_sum_tmp + I_din  ;
 always @(posedge I_clk)begin
     S_sum_1d <= S_sum       ;
     S_sum_2d <= S_sum_1d    ;
-    S_wdata  <= S_sum_3d    ;//dly=7
+    S_wdata  <= S_sum_2d    ;//dly=7
 end
 
 // S_wr

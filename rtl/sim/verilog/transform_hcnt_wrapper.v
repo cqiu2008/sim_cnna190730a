@@ -44,29 +44,32 @@ input       [    C_CNV_K_WIDTH-1:0]I_stride_h       ,
 input       [    C_CNV_K_WIDTH-1:0]I_pad_h          ,
 input       [          C_DSIZE-1:0]I_hcnt           ,
 output reg  [          C_DSIZE-1:0]O_r0hfirst       ,
-output reg  [          C_DSIZE-1:0]O_r0kh           ,
+output reg  [    C_CNV_K_WIDTH-1:0]O_r0kh           ,
 output reg  [          C_DSIZE-1:0]O_r0hindex       ,  
 output reg  [          C_DSIZE-1:0]O_r1hfirst       ,
-output reg  [          C_DSIZE-1:0]O_r1kh           ,
+output reg  [    C_CNV_K_WIDTH-1:0]O_r1kh           ,
 output reg  [          C_DSIZE-1:0]O_r1hindex       , 
 output reg  [          C_DSIZE-1:0]O_r2hfirst       ,
-output reg  [          C_DSIZE-1:0]O_r2kh           ,
+output reg  [    C_CNV_K_WIDTH-1:0]O_r2kh           ,
 output reg  [          C_DSIZE-1:0]O_r2hindex       , 
 output reg  [          C_DSIZE-1:0]O_r3hfirst       ,
-output reg  [          C_DSIZE-1:0]O_r3kh           ,
+output reg  [    C_CNV_K_WIDTH-1:0]O_r3kh           ,
 output reg  [          C_DSIZE-1:0]O_r3hindex       
 );
 
 reg    [       C_DSIZE-1:0]S_reg_hfirst[0:1][0:3]   ;
 reg    [       C_DSIZE-1:0]S_reg_kh[0:1][0:3]       ;
 reg    [       C_DSIZE-1:0]S_reg_hindex[0:1][0:3]   ;
-
-wire   [       C_DSIZE-1:0]S_hfirst[0:3]          ;
-wire   [       C_DSIZE-1:0]S_kh[0:3]              ;
-wire   [       C_DSIZE-1:0]S_hindex[0:3]          ;
-wire                       S_ndap_start         ;
-reg    [               3:0]S_ndap_start_shift   ;
-reg                        S_ap_start_1d        ; 
+wire   [       C_DSIZE-1:0]S_hfirst[0:3]            ;
+wire   [       C_DSIZE-1:0]S_kh[0:3]                ;
+wire   [       C_DSIZE-1:0]S_hindex[0:3]            ;
+wire                       S_ndap_start             ;
+reg    [               3:0]S_ndap_start_shift       ;
+reg                        S_ap_start_1d            ; 
+reg    [       C_DSIZE-1:0]S_r0kh                   ; 
+reg    [       C_DSIZE-1:0]S_r1kh                   ; 
+reg    [       C_DSIZE-1:0]S_r2kh                   ; 
+reg    [       C_DSIZE-1:0]S_r3kh                   ; 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Calcuate the variable  
@@ -139,80 +142,111 @@ end
 
 initial begin
     O_r0hfirst     = {C_DSIZE{1'b1}};
-    O_r0kh         = {C_DSIZE{1'b1}};
     O_r0hindex     = {C_DSIZE{1'b1}};  
     O_r1hfirst     = {C_DSIZE{1'b1}};
-    O_r1kh         = {C_DSIZE{1'b1}};
     O_r1hindex     = {C_DSIZE{1'b1}};  
     O_r2hfirst     = {C_DSIZE{1'b1}};
-    O_r2kh         = {C_DSIZE{1'b1}};
     O_r2hindex     = {C_DSIZE{1'b1}};  
     O_r3hfirst     = {C_DSIZE{1'b1}};
-    O_r3kh         = {C_DSIZE{1'b1}};
     O_r3hindex     = {C_DSIZE{1'b1}};  
+    S_r0kh         = {C_DSIZE{1'b1}};
+    S_r1kh         = {C_DSIZE{1'b1}};
+    S_r2kh         = {C_DSIZE{1'b1}};
+    S_r3kh         = {C_DSIZE{1'b1}};
 end
 
 always @(posedge I_clk)begin
     if(I_allap_start)begin
         if( (I_hcnt[0]) && (~S_ap_start_1d) && I_ap_start )begin
             O_r0hfirst     <= S_reg_hfirst[0][0];
-            O_r0kh         <= S_reg_kh[0][0]    ;
             O_r0hindex     <= S_reg_hindex[0][0];  
             O_r1hfirst     <= S_reg_hfirst[0][1];
-            O_r1kh         <= S_reg_kh[0][1]    ;
             O_r1hindex     <= S_reg_hindex[0][1];  
             O_r2hfirst     <= S_reg_hfirst[0][2];
-            O_r2kh         <= S_reg_kh[0][2]    ;
             O_r2hindex     <= S_reg_hindex[0][2];  
             O_r3hfirst     <= S_reg_hfirst[0][3];
-            O_r3kh         <= S_reg_kh[0][3]    ;
             O_r3hindex     <= S_reg_hindex[0][3];  
+            S_r0kh         <= S_reg_kh[0][0]    ;
+            S_r1kh         <= S_reg_kh[0][1]    ;
+            S_r2kh         <= S_reg_kh[0][2]    ;
+            S_r3kh         <= S_reg_kh[0][3]    ;
         end
         else if( (!I_hcnt[0]) && (~S_ap_start_1d) && I_ap_start && (I_hcnt != {C_DSIZE{1'b0}}) )begin
             O_r0hfirst     <= S_reg_hfirst[1][0];
-            O_r0kh         <= S_reg_kh[1][0]    ;
             O_r0hindex     <= S_reg_hindex[1][0];  
             O_r1hfirst     <= S_reg_hfirst[1][1];
-            O_r1kh         <= S_reg_kh[1][1]    ;
             O_r1hindex     <= S_reg_hindex[1][1];  
             O_r2hfirst     <= S_reg_hfirst[1][2];
-            O_r2kh         <= S_reg_kh[1][2]    ;
             O_r2hindex     <= S_reg_hindex[1][2];  
             O_r3hfirst     <= S_reg_hfirst[1][3];
-            O_r3kh         <= S_reg_kh[1][3]    ;
             O_r3hindex     <= S_reg_hindex[1][3];  
+            S_r0kh         <= S_reg_kh[1][0]    ;
+            S_r1kh         <= S_reg_kh[1][1]    ;
+            S_r2kh         <= S_reg_kh[1][2]    ;
+            S_r3kh         <= S_reg_kh[1][3]    ;
         end
         else begin
             O_r0hfirst     <= O_r0hfirst     ;
-            O_r0kh         <= O_r0kh         ;
             O_r0hindex     <= O_r0hindex     ;  
             O_r1hfirst     <= O_r1hfirst     ;
-            O_r1kh         <= O_r1kh         ;
             O_r1hindex     <= O_r1hindex     ;  
             O_r2hfirst     <= O_r2hfirst     ;
-            O_r2kh         <= O_r2kh         ;
             O_r2hindex     <= O_r2hindex     ;  
             O_r3hfirst     <= O_r3hfirst     ;
-            O_r3kh         <= O_r3kh         ;
             O_r3hindex     <= O_r3hindex     ;  
+            S_r0kh         <= S_r0kh         ;
+            S_r1kh         <= S_r1kh         ;
+            S_r2kh         <= S_r2kh         ;
+            S_r3kh         <= S_r3kh         ;
         end
     end
     else begin
             O_r0hfirst     <= {C_DSIZE{1'b1}};
-            O_r0kh         <= {C_DSIZE{1'b1}};
             O_r0hindex     <= {C_DSIZE{1'b1}};  
             O_r1hfirst     <= {C_DSIZE{1'b1}};
-            O_r1kh         <= {C_DSIZE{1'b1}};
             O_r1hindex     <= {C_DSIZE{1'b1}};  
             O_r2hfirst     <= {C_DSIZE{1'b1}};
-            O_r2kh         <= {C_DSIZE{1'b1}};
             O_r2hindex     <= {C_DSIZE{1'b1}};  
             O_r3hfirst     <= {C_DSIZE{1'b1}};
-            O_r3kh         <= {C_DSIZE{1'b1}};
             O_r3hindex     <= {C_DSIZE{1'b1}};  
+            S_r0kh         <= {C_DSIZE{1'b1}};
+            S_r1kh         <= {C_DSIZE{1'b1}};
+            S_r2kh         <= {C_DSIZE{1'b1}};
+            S_r3kh         <= {C_DSIZE{1'b1}};
     end
 end
 
+align #(
+    .C_IN_WIDTH (C_DSIZE        ),
+    .C_OUT_WIDTH(C_CNV_K_WIDTH  ))
+u_r0kh(
+    .I_din      (S_r0kh         ),
+    .O_dout     (O_r0kh         )
+);
+
+align #(
+    .C_IN_WIDTH (C_DSIZE        ),
+    .C_OUT_WIDTH(C_CNV_K_WIDTH  ))
+u_r1kh(
+    .I_din      (S_r1kh         ),
+    .O_dout     (O_r1kh         )
+);
+
+align #(
+    .C_IN_WIDTH (C_DSIZE        ),
+    .C_OUT_WIDTH(C_CNV_K_WIDTH  ))
+u_r2kh(
+    .I_din      (S_r2kh         ),
+    .O_dout     (O_r2kh         )
+);
+
+align #(
+    .C_IN_WIDTH (C_DSIZE        ),
+    .C_OUT_WIDTH(C_CNV_K_WIDTH  ))
+u_r3kh(
+    .I_din      (S_r3kh         ),
+    .O_dout     (O_r3kh         )
+);
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Naming specification                                                                         
 // (1) w+"xxx" name type , means write clock domain                                             

@@ -102,7 +102,7 @@ localparam   C_LQIBUF_WIDTH   = C_QIBUF_WIDTH * C_PEPIX             ;
 wire         [       C_DIM_WIDTH-1:0]S_hcnt                         ;
 wire         [       C_DIM_WIDTH-1:0]S_hcnt_pre                     ;
 wire         [       C_DIM_WIDTH-1:0]S_hfirst[0:3]                  ;
-wire         [       C_DIM_WIDTH-1:0]S_kh[0:3]                      ;
+wire         [     C_CNV_K_WIDTH-1:0]S_kh[0:3]                      ;
 wire         [       C_DIM_WIDTH-1:0]S_hindex[0:3]                  ;
 reg                                  S_en_wr_obuf0  = 1'b1          ;
 reg                                  S_obuf_init_ok = 1'b0          ;
@@ -142,6 +142,10 @@ reg                                  S_mainpost_cnt_en              ;
 reg                                  S_mainpost_cnt_en_1d           ;
 reg          [       C_DIM_WIDTH-1:0]S_posthaddr                    ;
 reg                                  S_enwr_obuf0                   ;
+wire         [C_RAM_ADDR_WIDTH-1  :0]S_qraddr0                      ;//dly=3
+wire         [C_RAM_ADDR_WIDTH-1  :0]S_qraddr1                      ; 
+wire         [  C_LQIBUF_WIDTH-1  :0]S_qrdata0                      ;//dly=6
+wire         [  C_LQIBUF_WIDTH-1  :0]S_qrdata1                      ; 
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -359,10 +363,10 @@ u_multi_slide_windows_flatten(
     .I_sraddr1           (S_sbuf1_raddr         ), 
     .O_srdata0           (S_sbuf0_rdata         ), 
     .O_srdata1           (S_sbuf1_rdata         ), 
-    .I_qraddr0           (), 
-    .I_qraddr1           (), 
-    .O_qrdata0           (), 
-    .O_qrdata1           (), 
+    .I_qraddr0           (S_qraddr0             ), 
+    .I_qraddr1           (S_qraddr1             ), 
+    .O_qrdata0           (S_qrdata0             ), 
+    .O_qrdata1           (S_qrdata1             ), 
     .I_ipara_height      (I_ipara_height        ),
     .I_hindex            (S_hindex[1]           ),
     .I_hcnt_odd          (S_hcnt[0]             ),//1,3,5,...active
@@ -425,6 +429,49 @@ u_test_msw(
     .O_maxi_wdata       (O_fomaxi_wdata      ),       
     .I_maxi_bvalid      (I_fomaxi_bvalid     ),
     .O_maxi_bready      (O_fomaxi_bready     )    
+);
+
+process_qbuf #(
+    .C_MEM_STYLE         (C_MEM_STYLE          ),
+    .C_POWER_OF_1ADOTS   (C_POWER_OF_1ADOTS    ),
+    .C_POWER_OF_PECI     (C_POWER_OF_PECI      ),
+    .C_POWER_OF_PECO     (C_POWER_OF_PECO      ),
+    .C_POWER_OF_PEPIX    (C_POWER_OF_PEPIX     ),
+    .C_POWER_OF_PECODIV  (C_POWER_OF_PECODIV   ),
+    .C_POWER_OF_RDBPIX   (C_POWER_OF_RDBPIX    ), 
+    .C_PEPIX             (C_PEPIX              ),
+    .C_DATA_WIDTH        (C_DATA_WIDTH         ),
+    .C_QIBUF_WIDTH       (C_QIBUF_WIDTH        ),
+    .C_QOBUF_WIDTH       (C_QOBUF_WIDTH        ),
+    .C_LQIBUF_WIDTH      (C_LQIBUF_WIDTH       ),       
+    .C_CNV_K_WIDTH       (C_CNV_K_WIDTH        ),
+    .C_CNV_CH_WIDTH      (C_CNV_CH_WIDTH       ),
+    .C_DIM_WIDTH         (C_DIM_WIDTH          ),
+    .C_M_AXI_LEN_WIDTH   (C_M_AXI_LEN_WIDTH    ),
+    .C_M_AXI_ADDR_WIDTH  (C_M_AXI_ADDR_WIDTH   ),
+    .C_M_AXI_DATA_WIDTH  (C_M_AXI_DATA_WIDTH   ),
+    .C_RAM_ADDR_WIDTH    (C_RAM_ADDR_WIDTH     ),
+    .C_RAM_DATA_WIDTH    (C_RAM_DATA_WIDTH     ), 
+    .C_RAM_LDATA_WIDTH   (C_RAM_LDATA_WIDTH    ))
+u_process_qbuf(
+    .I_clk               (I_clk                 ),
+    .I_rst               (I_rst                 ),
+    .I_allap_start       (I_ap_start            ),
+    .I_ap_start          (S_pqap_start          ),
+    .O_ap_done           (S_pqap_done           ),
+    .O_qraddr0           (S_qraddr0             ),//dly=3
+    .O_qraddr1           (S_qraddr1             ), 
+    .I_qrdata0           (S_qrdata0             ),//dly=6
+    .I_qrdata1           (S_qrdata1             ), 
+    .I_hindex            (S_hindex[2]           ),
+    .I_kh                (S_kh[2]               ),
+    .I_kernel_h          (I_kernel_h            ),
+    .I_kernel_w          (I_kernel_w            ),
+    .I_hcnt_odd          (S_hcnt[0]             ),//1,3,5,...active
+    .I_enwr_obuf0        (S_enwr_obuf0          ),
+    .I_ipara_height      (I_ipara_height        ),
+    .I_opara_width       (I_opara_width         ),
+    .I_ipara_ci          (I_ipara_ci            ) 
 );
 
 // ceil_power_of_2 #(

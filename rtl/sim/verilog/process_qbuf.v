@@ -66,7 +66,7 @@ input       [  C_LQIBUF_WIDTH-1  :0]I_qrdata0           ,//dly=6
 input       [  C_LQIBUF_WIDTH-1  :0]I_qrdata1           , 
 // reg
 input       [       C_DIM_WIDTH-1:0]I_hindex            ,
-input       [     C_CNV_K_WIDTH-1:-]I_kh                ,
+input       [     C_CNV_K_WIDTH-1:0]I_kh                ,
 input       [     C_CNV_K_WIDTH-1:0]I_kernel_h          ,
 input       [     C_CNV_K_WIDTH-1:0]I_kernel_w          ,
 input                               I_hcnt_odd          ,
@@ -111,8 +111,11 @@ reg  [       C_NCH_GROUP-1:0]SC_cig_cnt_2d                                  ;
 wire [       C_NCH_GROUP-1:0]SL_ci_group                                    ;   
 reg  [       C_NCH_GROUP-1:0]SL_ci_group_1d                                 ;   
 reg                          SC_cig_valid                                   ;
+reg                          SC_cig_valid_1d                                ;
+reg                          SC_cig_valid_pos                               ;
+wire                         SC_first_flag                                  ;
 wire                         SC_cig_over_flag                               ; 
-wire [     C_CNV_K_WIDTH-1:-]SC_kw_cnt                                      ;
+wire [     C_CNV_K_WIDTH-1:0]SC_kw_cnt                                      ;
 wire                         SC_kw_valid                                    ;
 wire                         SC_kw_over_flag                                ; 
 wire [   C_WOT_DIV_PEPIX-1:0]SC_wog_cnt                                     ;
@@ -128,6 +131,7 @@ reg  [C_RAM_ADDR_WIDTH-1  :0]SC_depth_s1b                                   ;
 reg  [C_RAM_ADDR_WIDTH-1  :0]SC_depth_s2                                    ;
 reg  [C_RAM_ADDR_WIDTH-1  :0]SC_depth_s3                                    ;
 reg  [  C_LQIBUF_WIDTH-1  :0]SC_qrdata                                      ;
+wire                         SC_dv_pre4                                     ;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // initial layer variable
@@ -213,10 +217,18 @@ end
 //calcualte valid signals
 always @(posedge I_clk)begin
     if(SR_ndap_start_shift[0]&& I_ap_start)begin
-        SC_cig_valid <= 1'b1;
+        if(SR_ndap_start_shift[1:0]==2'b01)begin
+            SC_cig_valid <= 1'b1;
+        end
+        else if(SC_wog_over_flag && SC_wog_valid)begin
+            SC_cig_valid <= 1'b0;
+        end
+        else begin
+            SC_cig_valid <= SC_cig_valid ;
+        end
     end
     else begin
-        SC_cig_valid <= 1'b0;
+        SC_cig_valid <= 1'b0;//dly=0
     end
 end
 
@@ -271,6 +283,8 @@ always @(posedge I_clk)begin
     SC_depth_s1b    <= SC_kw_cnt  * SL_ci_group_1d          ;
     SC_depth_s2     <= SC_depth_s1a + SC_depth_s1b          ; 
     SC_depth_s3     <= SC_depth_s2 + SC_cig_cnt_2d          ;//dly=3
+    SC_cig_valid_1d <= SC_cig_valid                         ;
+    SC_cig_valid_pos<= ~SC_cig_valid_1d && SC_cig_valid     ;//dly=1
 end
 
 assign O_qraddr0 = SC_depth_s3 ;
@@ -289,6 +303,26 @@ assign SR_qobuf1_en  = ~I_enwr_obuf0 ;
 // output      [C_RAM_ADDR_WIDTH-1  :0]O_qraddr1           , 
 // input       [  C_LQIBUF_WIDTH-1  :0]I_qrdata0           ,//dly=6
 // input       [  C_LQIBUF_WIDTH-1  :0]I_qrdata1           , 
+
+
+dly #(
+    .C_DATA_WIDTH   (1          ), 
+    .C_DLY_NUM      (3          ))
+u_dv_pre4(
+    .I_clk     (I_clk           ),
+    .I_din     (SC_cig_valid    ),
+    .O_dout    (SC_dv_pre4       )
+);
+
+dly #(
+    .C_DATA_WIDTH   (1                  ), 
+    .C_DLY_NUM      (4                  ))
+u_first_flag(
+    .I_clk          (I_clk              ),
+    .I_din          (SC_noadd_qodout    ),//dly=3
+    .O_dout         (SC_first_flag      ) //dly=7
+);
+
 // write here by cqiu
 addsumram #(
     .C_MEM_STYLE    (C_MEM_STYLE      ),
@@ -297,12 +331,12 @@ addsumram #(
     .C_ASIZE        (C_RAM_ADDR_WIDTH ))
 u_addsumram(
     .I_clk          (I_clk            ),
-    .I_first_flag   (I_first_flag     ),
-    .I_dv_pre4      (I_dv_pre4        ),//dly=0
-    .I_din          (I_din            ),
-    .I_dven         (I_dven           ),
-    .I_raddr        (I_raddr          ),
-    .O_rdata        (O_rdata          )     
+    .I_first_flag   (SC_first_flag    ),
+    .I_dv_pre4      (SC_dv_pre4       ),//dly=3
+    .I_din          (SC_qrdata[C_QIBUF_WIDTH-1:0]),//dly=7
+    .I_dven         (I_ap_start       ),
+    .I_raddr        (),
+    .O_rdata        ()     
 );
 
 
