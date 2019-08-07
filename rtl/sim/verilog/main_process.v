@@ -40,6 +40,7 @@ parameter
     C_POWER_OF_RDBPIX       = 1         , 
     C_DATA_WIDTH            = 8         , 
     C_QIBUF_WIDTH           = 12        , 
+    C_QOBUF_WIDTH           = 24        , 
     C_CNV_K_WIDTH           = 8         ,
     C_CNV_CH_WIDTH          = 8         ,
     C_DIM_WIDTH             = 16        ,

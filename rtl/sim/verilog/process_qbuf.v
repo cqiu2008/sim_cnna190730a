@@ -41,6 +41,7 @@ parameter
     C_PEPIX                 = 8         ,
     C_DATA_WIDTH            = 8         ,
     C_QIBUF_WIDTH           = 12        ,
+    C_QOBUF_WIDTH           = 24        ,
     C_LQIBUF_WIDTH          = 12*8      ,       
     C_CNV_K_WIDTH           = 8         ,
     C_CNV_CH_WIDTH          = 8         ,
@@ -284,6 +285,25 @@ assign SR_qibuf0_en  = ~I_hcnt_odd   ;
 assign SR_qobuf0_en  = I_enwr_obuf0  ;
 assign SR_qobuf1_en  = ~I_enwr_obuf0 ;
 
+// output      [C_RAM_ADDR_WIDTH-1  :0]O_qraddr0           ,//dly=3
+// output      [C_RAM_ADDR_WIDTH-1  :0]O_qraddr1           , 
+// input       [  C_LQIBUF_WIDTH-1  :0]I_qrdata0           ,//dly=6
+// input       [  C_LQIBUF_WIDTH-1  :0]I_qrdata1           , 
+// write here by cqiu
+addsumram #(
+    .C_MEM_STYLE    (C_MEM_STYLE      ),
+    .C_ISIZE        (C_QIBUF_WIDTH    ),
+    .C_DSIZE        (C_QOBUF_WIDTH    ),
+    .C_ASIZE        (C_RAM_ADDR_WIDTH ))
+u_addsumram(
+    .I_clk          (I_clk            ),
+    .I_first_flag   (I_first_flag     ),
+    .I_dv_pre4      (I_dv_pre4        ),//dly=0
+    .I_din          (I_din            ),
+    .I_dven         (I_dven           ),
+    .I_raddr        (I_raddr          ),
+    .O_rdata        (O_rdata          )     
+);
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

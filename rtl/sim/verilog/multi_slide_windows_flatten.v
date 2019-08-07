@@ -41,6 +41,7 @@ parameter
     C_PEPIX                 = 8         ,
     C_DATA_WIDTH            = 8         ,
     C_QIBUF_WIDTH           = 12        ,
+    C_QOBUF_WIDTH           = 24        ,
     C_LQIBUF_WIDTH          = 12*8      ,       
     C_CNV_K_WIDTH           = 8         ,
     C_CNV_CH_WIDTH          = 8         ,
