@@ -30,16 +30,18 @@
 //Asynchronous Interface: none 
 //END_HEADER------------------------------------------------------------------
 `timescale 1 ns / 100 ps
-module adder_pp2 #(
+module pipeline_acc #(
 parameter   
     C_IN1       = 12        ,
-    C_IN2       = 12        ,
     C_OUT       = 13        
 )(
-input                               I_clk        ,
-input       [             C_IN1-1:0]I_a          ,
-input       [             C_IN1-1:0]I_b          ,
-output      [             C_OUT-1:0]O_dout          
+input                               I_rst           ,
+input                               I_clk           ,
+input       [             C_IN1-1:0]I_operand       ,
+input                               I_op_rdy        ,
+input                               I_op_last       ,
+output                              O_result_rdy    ,
+output      [             C_OUT-1:0]O_result        
 );
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
