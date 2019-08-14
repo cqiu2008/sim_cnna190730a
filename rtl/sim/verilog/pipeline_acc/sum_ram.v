@@ -30,7 +30,7 @@
 //Asynchronous Interface: none 
 //END_HEADER------------------------------------------------------------------
 `timescale 1 ns / 100 ps
-module addsumram #(
+module sum_ram#(
 parameter   
     C_MEM_STYLE     = "block"   ,
     C_ISIZE         = 12        ,
@@ -57,9 +57,9 @@ reg                          S_rd       ;
 wire [C_DSIZE-1           :0]S_rdata    ;           
 reg  [C_DSIZE-1           :0]S_rdata_1d ;     
 wire [C_DSIZE-1           :0]S_sum_tmp  ;     
-wire [C_DSIZE-1           :0]S_sum      ;     
-reg  [C_DSIZE-1           :0]S_sum_1d   ;     
-reg  [C_DSIZE-1           :0]S_sum_2d   ;     
+//wire [C_DSIZE-1           :0]S_sum      ;     
+//wire [C_DSIZE-1           :0]S_sum_1d   ;     
+wire [C_DSIZE-1           :0]S_sum_2d   ;     
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // ram bus 
@@ -105,12 +105,21 @@ u_sdpram(
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 assign S_sum_tmp = I_first_flag ? {C_DSIZE{1'b0}} : S_rdata_1d  ;
-assign S_sum     = S_sum_tmp + I_din  ;
+//assign S_sum     = S_sum_tmp + I_din  ;
+
+adder_pp2 #(
+    .C_IN1  (C_DSIZE ),
+    .C_IN2  (C_DSIZE ),
+    .C_OUT  (C_DSIZE ))
+u_adder_pp2(
+    .I_clk  (I_clk      ),
+    .I_a    (S_sum_tmp  ),
+    .I_b    (I_din      ),
+    .O_dout (S_sum_2d   )   
+);
 
 // S_wdata
 always @(posedge I_clk)begin
-    S_sum_1d <= S_sum       ;
-    S_sum_2d <= S_sum_1d    ;
     S_wdata  <= S_sum_2d    ;//dly=7
 end
 

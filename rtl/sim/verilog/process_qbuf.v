@@ -131,7 +131,7 @@ reg  [C_RAM_ADDR_WIDTH-1  :0]SC_depth_s1b                                   ;
 reg  [C_RAM_ADDR_WIDTH-1  :0]SC_depth_s2                                    ;
 reg  [C_RAM_ADDR_WIDTH-1  :0]SC_depth_s3                                    ;
 reg  [  C_LQIBUF_WIDTH-1  :0]SC_qrdata                                      ;
-wire                         SC_dv_pre4                                     ;
+wire                         SC_dv                                          ;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // initial layer variable
@@ -307,11 +307,11 @@ assign SR_qobuf1_en  = ~I_enwr_obuf0 ;
 
 dly #(
     .C_DATA_WIDTH   (1          ), 
-    .C_DLY_NUM      (3          ))
+    .C_DLY_NUM      (7          ))
 u_dv_pre4(
     .I_clk     (I_clk           ),
     .I_din     (SC_cig_valid    ),
-    .O_dout    (SC_dv_pre4       )
+    .O_dout    (SC_dv           )
 );
 
 dly #(
@@ -323,20 +323,22 @@ u_first_flag(
     .O_dout         (SC_first_flag      ) //dly=7
 );
 
-// write here by cqiu
-addsumram #(
+// 
+add_sum_ram #(
     .C_MEM_STYLE    (C_MEM_STYLE      ),
+    .C_CNT          (C_CNV_K_GROUP    )
     .C_ISIZE        (C_QIBUF_WIDTH    ),
     .C_DSIZE        (C_QOBUF_WIDTH    ),
     .C_ASIZE        (C_RAM_ADDR_WIDTH ))
 u_addsumram(
-    .I_clk          (I_clk            ),
-    .I_first_flag   (SC_first_flag    ),
-    .I_dv_pre4      (SC_dv_pre4       ),//dly=3
-    .I_din          (SC_qrdata[C_QIBUF_WIDTH-1:0]),//dly=7
-    .I_dven         (I_ap_start       ),
-    .I_raddr        (),
-    .O_rdata        ()     
+    .I_clk          (I_clk                          ),
+    .I_cnt_boundary (SL_kernel_ci_group             ),
+    .I_first_flag   (SC_first_flag                  ),
+    .I_din_valid    (SC_dv                          ),//dly=7
+    .I_din          (SC_qrdata[C_QIBUF_WIDTH-1:0]   ),//dly=7
+    .I_dven         (I_ap_start                     ),
+    .I_raddr        (                               ),
+    .O_rdata        (                               )     
 );
 
 
