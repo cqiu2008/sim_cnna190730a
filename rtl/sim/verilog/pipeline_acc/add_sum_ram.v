@@ -39,7 +39,6 @@ parameter
     C_ASIZE         = 10          
 )(
 input                               I_clk           ,
-// ctrl bus
 input       [             C_CNT-1:0]I_cnt_boundary  ,
 input                               I_first_flag    ,
 input                               I_din_valid     ,//dly=0

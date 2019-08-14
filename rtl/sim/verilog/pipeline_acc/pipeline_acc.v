@@ -41,7 +41,7 @@ input       [             C_CNT-1:0]I_cnt_boundary      ,
 input                               I_op_en             ,
 input                               I_op_rdy            ,//rdly=0
 input       [             C_IN1-1:0]I_operand           ,
-output                              O_result_first_flag ,
+output reg                          O_result_first_flag ,
 output reg                          O_result_rdy_pre4   ,
 output reg  [             C_OUT-1:0]O_result        
 );
@@ -63,12 +63,14 @@ output reg  [             C_OUT-1:0]O_result
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //localparam C_I = C_IN/2;
 
+reg                             S_op_rdy_1d         ;
 reg      [C_CNT-1            :0]S_cnt               ;
 wire     [C_OUT-1            :0]S_operand           ;
 reg      [C_OUT-1            :0]S_a                 ;
 wire     [C_OUT-1            :0]S_b                 ;
 wire     [C_OUT-1            :0]S_sum               ;
 reg                             S_sum_valid         ;
+reg                             S_sum_valid_lck     ;
 
 wire     [C_OUT-1            :0]S_c1sum             ;
 wire                            S_c1sum_p4_valid    ; 
@@ -160,19 +162,44 @@ u_operand(
 );
 
 always @(posedge I_clk)begin
-    if(~S_cnt[0])begin
-        S_a <= S_operand    ;
+    if(I_op_rdy)begin
+        if(~S_cnt[0])begin
+            S_a <= S_operand    ;
+        end
+        else begin
+            S_a <= S_sum        ;     
+        end
     end
     else begin
-        S_a <= S_sum        
+            S_a <= {C_OUT{1'b0}}; 
     end
 end
 
 always @(posedge I_clk)begin
-    S_sum_valid <= (~I_op_rdy) | S_c2sum_valid | S_c3sum_valid | S_m3sum_valid ; 
+    S_op_rdy_1d <= I_op_rdy;
 end
 
-assign S_b == S_sum_valid ? {C_OUT{1'b0}} : S_cnt[0] ? S_operand : S_sum ;  
+//  S_sum_valid <= (I_op_rdy && (~S_op_rdy_1d)) | S_c2sum_valid | S_c3sum_valid | S_m3sum_valid ; 
+
+always @(posedge I_clk)begin
+    S_sum_valid <=  S_c2sum_valid | S_c3sum_valid | S_m3sum_valid ; 
+end
+
+always @(posedge I_clk)begin
+    if(I_op_en)begin
+        if(S_sum_valid)begin
+            S_sum_valid_lck <= 1'b1             ;
+        end
+        else begin
+            S_sum_valid_lck <= S_sum_valid_lck  ; 
+        end
+    end
+    else begin
+            S_sum_valid_lck <= 1'b0             ;
+    end
+end
+
+assign S_b == (S_sum_valid | (~S_op_rdy_1d)) ? {C_OUT{1'b0}} : S_cnt[0] ? S_operand : S_sum ;  
 
 // instance adder pipeline 
 adder_pp2 #(
@@ -202,6 +229,7 @@ u_addr_pp2(
 //                      ______________
 // sum_base_valid _____|
 //          S_sum_valid is ( -1 ) dly than S_sum_base_valid 
+//          Attention this S_sum_valid is not used in pipeline adder in case 1
 //                _________________
 // sum_valid_____|
 //
@@ -209,6 +237,8 @@ u_addr_pp2(
 //
 // sum(result)   | d0  | d1  | 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//should pre 4clk than S_sum_valid
 assign S_c1sum_p4_valid  = S_sum_base_valid  ; 
 
 dly #(
@@ -237,15 +267,19 @@ u_c1sum(
 // sum_base_valid ___________|     |_____|     |_____|
 //
 // operand       | d0  | d1  | e0  | e1  | f0  | f1  |
-//       a         x   | d0  |     | e0  |     | f0  |
-//       b         x   | d1  |     | e1  |     | f1  |
-//     sum                     x   |d0+d1|     |e0+e1|
+//       a         0   | d0  |     | e0  |     | f0  |
+//       b         0   | d1  |     | e1  |     | f1  |
+//     sum                     0   |d0+d1|     |e0+e1|
 //              S_sum_valid is ( 1 ) dly than S_sum_base_valid 
 //                                  _____       _____
 // sum_valid_______________________|     |_____|     |_____
 // 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//should pre 4clk than S_sum_valid
 assign S_c2sum_p4_valid  = S_sum_base_valid  ; 
+
+//should pre 1clk than S_sum_valid
 assign S_c2sum_valid     = S_sum_base_valid  ;
 
 dly #(
@@ -259,7 +293,7 @@ u_c2sum(
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // cases of 3: I_cnt_boundary == 3 
-// for case 3, S_sum_valid is 1 dly than S_sum_base_valid ,detail for the wave graph
+// for case 3, S_sum_valid is 2 dly than S_sum_base_valid ,detail for the wave graph
 //    __    __    __    __    __    __    __    __    __    __    __    __    __    __    __    __
 // __|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  
 //
@@ -274,17 +308,19 @@ u_c2sum(
 // sum_base_valid _________________|     |___________|     |___________|     |
 //
 // operand       | d0  | d1  | d2  | e0  | e1  | e2  | f0  | f1  | f2   | g0  |
-//       a         x   | d0  |     | d2  | e0  |     | e2  | f0  |      | f2  |
-//       b         x   | d1  |     |d0+d1| e1  |     |e0+e1| f1  |      |f0+f1|
-//     sum                     x   |d0+d1|     |d0+.2|e0+e1|     |e0+.2 |f0+f1|
+//       a         0   | d0  |     | d2  | e0  |     | e2  | f0  |      | f2  |
+//       b         0   | d1  |     |d0+d1| e1  |     |e0+e1| f1  |      |f0+f1|
+//     sum                     0   |d0+d1|     |d0+.2|e0+e1|     |e0+.2 |f0+f1|
 //              S_sum_valid is ( 2 ) dly than S_sum_base_valid 
 //                                               _____             _____
 // sum_valid____________________________________|     |___________|     |_____
 // 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-assign S_c3sum_p4_valid  = S_sum_base_valid  ; 
+//should pre 4clk than S_sum_valid
+assign S_c3sum_p4_valid  = S_sum_base_valid  ;
 
+//should pre 1clk than S_sum_valid
 always @(posedge I_clk)begin
     S_c3sum_valid  <= S_sum_base_valid  ;
 end
@@ -300,98 +336,99 @@ u_c3sum(
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // cases of 4: I_cnt_boundary == 4,5,6,7...... 
-// for case 4, S_sum_valid is 1 dly than S_sum_base_valid ,detail for the wave graph
+// for case 4, S_sum_valid is 4 dly than S_sum_base_valid ,detail for the wave graph
+//(1) For example I_cnt_boundary == 4
 //    __    __    __    __    __    __    __    __    __    __    __    __    __    __    __    __
 // __|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  
 //
 // cnt_boundary  (const 4 at layer  ... 
 //                ________________________________________________________________________
 // op_rdy  ______|
-//                                  _____                   _____             _____
-// equalc   _______________________|     |_________________|     |___________|     |______
+//                                  _____                   _____                   _____
+// equalc   _______________________|     |_________________|     |_________________|     |______
 //
-// cnt        0  | 0   | 1   | 2   | 3   | 0   | 1   | 2   | 3   | 0 
-//                                        _____                   _____             _____
-// sum_base_valid________________________|     |_________________|     |___________|     |
+// cnt        0  | 0   | 1   | 2   | 3   | 0   | 1   | 2   | 3   | 0    | 1  | 2   | 3   | 
+//                                        _____                   _____                   _____
+// sum_base_valid________________________|     |_________________|     |_________________|     |
 //
-// operand       | d0  | d1  | d2  | d3  | e0  | e1  | e2  | e3  | f0   | f1  |
-//       a         x   | d0  |     | d2  |d0+d1| e0  | e2  | f0  |      | f2  |
-//       b         x   | d1  |     | d3  |     | e1  |e0+e1| f1  |      |f0+f1|
-//     sum                     x   |d0+d1|0    |d2+d3|e0+e1|     |e0+.2 |f0+f1|
-//              S_sum_valid is ( 2 ) dly than S_sum_base_valid 
-//                                               _____             _____
-// sum_valid____________________________________|     |___________|     |_____
+// operand       | d0  | d1  | d2  | d3  | e0  | e1  | e2  | e3  | f0   | f1  | f2  | f3  |g0    |
+//       a         0   | d0  | 0   | d2  |d0+d1| e0  |d2+d3| e2  |e0+e1 | f0  |e2+e3| f2  |f0+f1 |
+//       b         0   | d1  | 0   | d3  | 0   | e1  |d0+d1| e3  |  0   | f1  |e0+e1| f3  |
+//     sum                0    0   |d0+d1| 0   |d2+d3|d0+d1|e0+e1|d0+.d3|e2+e3|e0+e1|f0+f1|e0+.e3|
+//              S_sum_valid is ( 4 ) dly than S_sum_base_valid 
+//                                                                 _____                   ______
+// sum_valid______________________________________________________|     |_________________|      |
+// 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//(2) For example I_cnt_boundary == 5 
+//    __    __    __    __    __    __    __    __    __    __    __    __    __    __    __    __
+// __|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  |__|  
+//
+// cnt_boundary  (const 5 at layer  ... 
+//                ________________________________________________________________________
+// op_rdy  ______|
+//                                        _____                         _____             
+// equalc   _____________________________|     |_______________________|     |_____________
+//
+// cnt        0  | 0   | 1   | 2   | 3   | 4   | 0   | 1   | 2   | 3   | 4    | 0   | 1  | 
+//                                              _____                         _____             
+// sum_base_valie _____________________________|     |_______________________|     |___________
+//
+//
+// operand       | d0  | d1  | d2  | d3  | d4  | e0  | e1  | e2  | e3  | e4   | f0  | f1  | f2  | f3   |
+//       a         0   | d0  | 0   | d2  |d0+d1| d4  | e0  |d0+d1| e2  |e0+e1 |e4   | f0  |e1+e0| f2   |
+//       b         0   | d1  | 0   | d3  |0    |d2+d3| e1  |d2+.4| e3  |  0   |e2+e3| f1  |e2+.4| f3   |
+//     sum                0    0   |d0+d1|0    |d2+d3|d0+d1|d2+.4|e0+e1|d0+.d4|e2+e3|e1+e0|e2+.4|f0+f1 |
+//              S_sum_valid is ( 4 ) dly than S_sum_base_valid 
+//                                                                       _____                         
+// sum_valid____________________________________________________________|     |________________________
 // 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-assign S_c3sum_p4_valid  = S_sum_base_valid  ; 
+//should pre 4clk than S_sum_valid
+assign S_m3sum_p4_valid  = S_sum_base_valid     ; 
+assign S_m3sum           = S_sum                ;
 
-always @(posedge I_clk)begin
-    S_c3sum_valid  <= S_sum_base_valid  ;
-end
-
+//should pre 1clk than S_sum_valid
 dly #(
-    .C_DATA_WIDTH   (C_OUT      ), 
-    .C_DLY_NUM      (4-(2)      ))
+    .C_DATA_WIDTH   (1          ), 
+    .C_DLY_NUM      (3          ))
 u_c3sum(
     .I_clk     (I_clk           ),
-    .I_din     (S_sum           ),
-    .O_dout    (S_c3sum         )
-
-
-// write here by cqiu 2019-08-14
+    .I_din     (S_sum_base_valid),
+    .O_dout    (S_m3sum_valid   )
+);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // process O_result_rdy_pre4 and O_result 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 always @(posedge I_clk)begin
     if(SL_equal1)begin
+        O_result_first_flag <= S_c1sum_p4_valid ; 
         O_result_rdy_pre4   <= S_c1sum_p4_valid ;
         O_result            <= S_c1sum          ; 
     end
     else if(SL_equal2)begin
+        O_result_first_flag <= S_sum_valid && (~S_sum_valid_lck); 
         O_result_rdy_pre4   <= S_c2sum_p4_valid ;
         O_result            <= S_c2sum          ; 
     end
     else if(SL_equal3)begin
+        O_result_first_flag <= S_sum_valid && (~S_sum_valid_lck); 
         O_result_rdy_pre4   <= S_c3sum_p4_valid ;
         O_result            <= S_c3sum          ; 
     end
     else if(SL_more3)begin
+        O_result_first_flag <= S_sum_valid && (~S_sum_valid_lck); 
         O_result_rdy_pre4   <= S_m3sum_p4_valid ;
         O_result            <= S_m3sum          ; 
     end
     else begin
+        O_result_first_flag <= 1'b0             ; 
         O_result_rdy_pre4   <= 1'b0             ;
         O_result            <= {C_OUT{1'b0}}    ;
     end
 end
-
-
-// rubbish 
-dly #(
-    .C_DATA_WIDTH (1    ) , 
-    .C_DLY_NUM    (1    ))
-u_sum_valid3(
-    .I_clk        (I_clk                ),
-    .I_din        (SL_equal3 && S_equal ),
-    .O_dout       (S_sum_valid3         )
-);
-
-dly #(
-    .C_DATA_WIDTH (1    ) , 
-    .C_DLY_NUM    (3    ))
-u_sum_valid3(
-    .I_clk        (I_clk                    ),
-    .I_din        (SL_equal5_1d&&S_equal_1d ),
-    .O_dout       (S_sum_valid5             )
-);
-
-
-
-
-
-assign O_result = S_sum ;     
 
 endmodule
 
