@@ -62,8 +62,9 @@ output reg  [             C_OUT-1:0]O_result
 // calculate parameter width 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //localparam C_I = C_IN/2;
-
+wire                            S_op_rdy_valid      ;
 reg                             S_op_rdy_1d         ;
+wire                            S_op_ndrdy          ;
 reg      [C_CNT-1            :0]S_cnt               ;
 wire     [C_OUT-1            :0]S_operand           ;
 reg      [C_OUT-1            :0]S_a                 ;
@@ -104,11 +105,11 @@ reg                             S_sum_base_valid;
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // calculate cases of 4 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-assign SL_equal1c = (I_cnt_boundary == {{(C_CNT-2){1'b0}},2'b01})        ? 1'b1 : 1'b0 
-assign SL_equal2c = (I_cnt_boundary == {{(C_CNT-2){1'b0}},2'b10})        ? 1'b1 : 1'b0 
-assign SL_equal3c = (I_cnt_boundary == {{(C_CNT-2){1'b0}},2'b11})        ? 1'b1 : 1'b0 
-assign SL_more3c  = (I_cnt_boundary >  {{(C_CNT-2){1'b0}},2'b11})        ? 1'b1 : 1'b0 
-assign S_equalc   = (I_cnt_boundary == S_cnt+{(C_CNT-2){1'b0}},2'b01} )  ? 1'b1 : 1'b0 
+assign SL_equal1c = (I_cnt_boundary == {{(C_CNT-2){1'b0}},2'b01})        ? 1'b1 : 1'b0 ;
+assign SL_equal2c = (I_cnt_boundary == {{(C_CNT-2){1'b0}},2'b10})        ? 1'b1 : 1'b0 ;
+assign SL_equal3c = (I_cnt_boundary == {{(C_CNT-2){1'b0}},2'b11})        ? 1'b1 : 1'b0 ;
+assign SL_more3c  = (I_cnt_boundary >  {{(C_CNT-2){1'b0}},2'b11})        ? 1'b1 : 1'b0 ;
+assign S_equalc   = (I_cnt_boundary == S_cnt+{{(C_CNT-2){1'b0}},2'b01} ) ? 1'b1 : 1'b0 ;
 
 always @(posedge I_clk)begin
     SL_equal1   <= SL_equal1c   ;
@@ -121,13 +122,31 @@ end
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // main S_cnt 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+dly #(
+    .C_DATA_WIDTH   (1          ), 
+    .C_DLY_NUM      (5          ))
+u_ndrdy(
+    .I_clk     (I_clk           ),
+    .I_din     (I_op_rdy        ),
+    .O_dout    (S_op_ndrdy      )//dly=5
+);
+
+//the signal has wide 5 dlys , because in more3 case, the delay S_sum is 5 dlys
+assign S_op_rdy_valid = I_op_rdy || S_op_ndrdy  ;
+
 always @(posedge I_clk)begin
     if(I_op_en)begin
-        if(S_equalc)begin
-            S_cnt <= {C_CNT{1'b0}};
+        if(S_op_rdy_valid)begin
+            if(S_equalc)begin
+                S_cnt <= {C_CNT{1'b0}}  ;
+            end
+            else begin
+                S_cnt <= S_cnt + {{(C_CNT-1){1'b0}},1'b1};
+            end
         end
         else begin
-            S_cnt <= S_cnt + {{(C_CNT-1){1'b0}},1'b1};
+                S_cnt <= S_cnt          ; 
         end
     end
     else begin
@@ -137,7 +156,7 @@ end
 
 always @(posedge I_clk)begin
     if(I_op_en)begin
-        if(S_equalc&&I_op_rdy)begin
+        if(S_equalc&&S_op_rdy_valid)begin
             S_sum_base_valid    <= 1'b1;
         end
         else begin
@@ -162,7 +181,7 @@ u_operand(
 );
 
 always @(posedge I_clk)begin
-    if(I_op_rdy)begin
+    if(S_op_rdy_valid)begin
         if(~S_cnt[0])begin
             S_a <= S_operand    ;
         end
@@ -176,13 +195,13 @@ always @(posedge I_clk)begin
 end
 
 always @(posedge I_clk)begin
-    S_op_rdy_1d <= I_op_rdy;
+    S_op_rdy_1d <= S_op_rdy_valid   ; 
 end
 
-//  S_sum_valid <= (I_op_rdy && (~S_op_rdy_1d)) | S_c2sum_valid | S_c3sum_valid | S_m3sum_valid ; 
-
 always @(posedge I_clk)begin
-    S_sum_valid <=  S_c2sum_valid | S_c3sum_valid | S_m3sum_valid ; 
+    S_sum_valid <=  (SL_equal2 & S_c2sum_valid) | 
+                    (SL_equal3 & S_c3sum_valid) | 
+                    (SL_more3  & S_m3sum_valid) ; 
 end
 
 always @(posedge I_clk)begin
@@ -199,7 +218,7 @@ always @(posedge I_clk)begin
     end
 end
 
-assign S_b == (S_sum_valid | (~S_op_rdy_1d)) ? {C_OUT{1'b0}} : S_cnt[0] ? S_operand : S_sum ;  
+assign S_b = (S_sum_valid | (~S_op_rdy_1d)) ? {C_OUT{1'b0}} : S_cnt[0] ? S_operand : S_sum ;  
 
 // instance adder pipeline 
 adder_pp2 #(
@@ -393,7 +412,7 @@ assign S_m3sum           = S_sum                ;
 dly #(
     .C_DATA_WIDTH   (1          ), 
     .C_DLY_NUM      (3          ))
-u_c3sum(
+u_m3sum(
     .I_clk     (I_clk           ),
     .I_din     (S_sum_base_valid),
     .O_dout    (S_m3sum_valid   )

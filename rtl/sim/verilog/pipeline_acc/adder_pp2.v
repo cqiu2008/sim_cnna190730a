@@ -47,85 +47,63 @@ output      [             C_OUT-1:0]O_dout
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 generate
-
     if(C_IN1 < C_IN2 )begin:less_tmp
-        localparam C_IN_TMP = C_IN2;
+        if(C_IN2 > 2*(C_IN2 /2) )begin:odd_to_even
+            adder_pp2_core #(
+                .C_IN1     (C_IN1   ),
+                .C_IN2     (C_IN2   ),
+                .C_IN      (C_IN2+1 ),
+                .C_OUT     (C_OUT   ))
+            u_addr2_pp2(
+                .I_clk     (I_clk   ),
+                .I_a       (I_a     ),
+                .I_b       (I_b     ),
+                .O_dout    (O_dout  )   
+            );
+        end
+        else begin:even
+            adder_pp2_core #(
+                .C_IN1     (C_IN1   ),
+                .C_IN2     (C_IN2   ),
+                .C_IN      (C_IN2   ),
+                .C_OUT     (C_OUT   ))
+            u_addr2_pp2(
+                .I_clk     (I_clk   ),
+                .I_a       (I_a     ),
+                .I_b       (I_b     ),
+                .O_dout    (O_dout  )   
+            );
+        end
     end
     else begin:more_tmp
-        localparam C_IN_TMP= C_IN1;
+        if(C_IN1 > 2*(C_IN1 / 2) )begin:odd_to_even
+            adder_pp2_core #(
+                .C_IN1     (C_IN1   ),
+                .C_IN2     (C_IN2   ),
+                .C_IN      (C_IN1+1 ),
+                .C_OUT     (C_OUT   ))
+            u_addr2_pp2(
+                .I_clk     (I_clk   ),
+                .I_a       (I_a     ),
+                .I_b       (I_b     ),
+                .O_dout    (O_dout  )   
+            );
+        end
+        else begin:even
+            adder_pp2_core #(
+                .C_IN1     (C_IN1   ),
+                .C_IN2     (C_IN2   ),
+                .C_IN      (C_IN1   ),
+                .C_OUT     (C_OUT   ))
+            u_addr2_pp2(
+                .I_clk     (I_clk   ),
+                .I_a       (I_a     ),
+                .I_b       (I_b     ),
+                .O_dout    (O_dout  )   
+            );
+        end
     end
-
-    if(C_IN_TMP > 2*(C_IN_TMP/2) )begin:odd_to_even
-        localparam C_IN = C_IN_TMP+1;
-    end
-    else begin:even
-        localparam C_IN = C_IN_TMP  ;
-    end
-
 endgenerate
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// C_I may be C_IN/4 , or others , if the first input is wire not register ,we can change it  
-////////////////////////////////////////////////////////////////////////////////////////////////////
-localparam C_I = C_IN/2;
-
-wire [C_IN-1              :0]S_a        ;
-wire [C_IN-1              :0]S_b        ;
-wire [C_IN                :0]S_sum      ;
-reg                          S_lcout_1d ;
-reg  [C_I-1               :0]S_lsum_1d  ;
-reg  [C_I-1               :0]S_ha_1d    ;
-reg  [C_I-1               :0]S_hb_1d    ;
-reg                          S_hcout_2d ;
-reg  [C_I-1               :0]S_hsum_2d  ;
-reg  [C_I-1               :0]S_lsum_2d  ;
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// align 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-align #(
-    .C_IN_WIDTH (C_IN1      ), 
-    .C_OUT_WIDTH(C_IN       ))
-u_a(
-    .I_din      (I_a     ),
-    .O_dout     (S_a     )
-);
-
-align #(
-    .C_IN_WIDTH (C_IN2      ), 
-    .C_OUT_WIDTH(C_IN       ))
-u_b(
-    .I_din      (I_b     ),
-    .O_dout     (S_b     )
-);
-
-align #(
-    .C_IN_WIDTH (C_IN+1     ), 
-    .C_OUT_WIDTH(C_OUT      ))
-u_dout(
-    .I_din      (S_sum      ),
-    .O_dout     (O_dout     )
-);
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// adder pipeline 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-//stage 1
-always @(posedge I_clk)begin
-    {S_lcout_1d,S_lsum_1d} <= S_a[C_I-1:0] + S_b[C_I-1:0]           ;// we can use smaller width      
-    S_ha_1d                <= S_a[C_IN-1:C_I]                       ;
-    S_hb_1d                <= S_b[C_IN-1:C_I]                       ;
-end
-
-//stage 2 
-always @(posedge I_clk)begin
-    {S_hcout_2d,S_hsum_2d} <= S_ha_1d + S_hb_1d + S_lcout_1d        ;
-    S_lsum_2d              <= S_lsum_1d                             ;
-end
-
-assign S_sum = {S_hcout_2d,S_hsum_2d,S_lsum_2d} ;
 
 endmodule
 

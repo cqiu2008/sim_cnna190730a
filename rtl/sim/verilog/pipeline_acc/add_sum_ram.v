@@ -75,7 +75,7 @@ u_pipeline_ac(
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 sum_ram#(
     .C_MEM_STYLE  (C_MEM_STYLE      ),
-    .C_ISIZE      (C_ISIZE          ),
+    .C_ISIZE      (C_DSIZE          ),
     .C_DSIZE      (C_DSIZE          ),
     .C_ASIZE      (C_ASIZE          ))
 u_sum_ram(

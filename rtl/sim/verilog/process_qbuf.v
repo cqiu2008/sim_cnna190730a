@@ -93,7 +93,6 @@ localparam   C_CNV_K_GROUP    = C_CNV_K_WIDTH + C_NCH_GROUP             ;
 //        such as SC_id , ... and so on 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 reg                          SR_kh_equal0                                   ;
 reg                          SR_hindex_equal0                               ;
 reg                          SR_kh_or_hindex_equal0                         ;
@@ -102,7 +101,10 @@ reg                          SC_kw_cnt_equal0                               ;
 reg                          SC_kw_and_cig_equal0                           ;
 reg                          SC_noadd_qodout                                ;
 wire                         SR_ndap_start                                  ;
+reg                          SR_ndap_start_1d                               ;
 reg  [                   3:0]SR_ndap_start_shift                            ;
+reg                          SR_pqap_done                                   ;
+wire                         SR_ndpqap_done                                 ;
 wire                         SR_hindex_suite                                ;
 reg  [     C_CNV_K_GROUP-1:0]SL_kernel_ci_group                             ; 
 wire [       C_NCH_GROUP-1:0]SC_cig_cnt                                     ;
@@ -203,11 +205,40 @@ dly #(
 u_start_dly(
     .I_clk     (I_clk           ),
     .I_din     (I_ap_start      ),
-    .O_dout    (SR_ndap_start    )
+    .O_dout    (SR_ndap_start   )
 );
 
 always @(posedge I_clk)begin
-    SR_ndap_start_shift   <={SR_ndap_start_shift[2:0],(SR_ndap_start&&SR_hindex_suite)}    ;
+    SR_ndap_start_1d    <= SR_ndap_start                                                 ;
+    SR_ndap_start_shift <={SR_ndap_start_shift[2:0],(SR_ndap_start&&SR_hindex_suite)}    ;
+end
+
+always @(posedge I_clk)begin
+    if(I_ap_start)begin
+        if(SC_wog_valid && SC_wog_over_flag)begin
+            SR_pqap_done <= 1'b1;
+        end
+        else begin
+            SR_pqap_done <= SR_pqap_done; 
+        end
+    end
+    else begin
+        SR_pqap_done <= 1'b0;
+    end
+end
+
+dly #(
+    .C_DATA_WIDTH   (1          ), 
+    .C_DLY_NUM      (10         ))
+u_ap_done(
+    .I_clk     (I_clk           ),
+    .I_din     (SR_pqap_done    ),
+    .O_dout    (SR_ndpqap_done  )
+);
+
+always @(posedge I_clk)begin
+    SR_ndap_start_1d    <= SR_ndap_start                                                                  ;
+    O_ap_done           <= SR_ndpqap_done ||((~SR_ndap_start_1d) && SR_ndap_start && (~SR_hindex_suite))  ;
 end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -323,23 +354,29 @@ u_first_flag(
     .O_dout         (SC_first_flag      ) //dly=7
 );
 
-// 
-add_sum_ram #(
-    .C_MEM_STYLE    (C_MEM_STYLE      ),
-    .C_CNT          (C_CNV_K_GROUP    )
-    .C_ISIZE        (C_QIBUF_WIDTH    ),
-    .C_DSIZE        (C_QOBUF_WIDTH    ),
-    .C_ASIZE        (C_RAM_ADDR_WIDTH ))
-u_addsumram(
-    .I_clk          (I_clk                          ),
-    .I_cnt_boundary (SL_kernel_ci_group             ),
-    .I_first_flag   (SC_first_flag                  ),
-    .I_din_valid    (SC_dv                          ),//dly=7
-    .I_din          (SC_qrdata[C_QIBUF_WIDTH-1:0]   ),//dly=7
-    .I_dven         (I_ap_start                     ),
-    .I_raddr        (                               ),
-    .O_rdata        (                               )     
-);
+genvar idx;
+generate
+    begin:ram
+        for(idx=0;idx<C_PEPIX;idx=idx+1)begin:rn
+            add_sum_ram #(
+                .C_MEM_STYLE    (C_MEM_STYLE      ),
+                .C_CNT          (C_CNV_K_GROUP    ),
+                .C_ISIZE        (C_QIBUF_WIDTH    ),
+                .C_DSIZE        (C_QOBUF_WIDTH    ),
+                .C_ASIZE        (C_RAM_ADDR_WIDTH ))
+            u_addsumram(
+                .I_clk          (I_clk                                                  ),
+                .I_cnt_boundary (SL_kernel_ci_group                                     ),
+                .I_first_flag   (SC_first_flag                                          ),
+                .I_din_valid    (SC_dv                                                  ),//dly=7
+                .I_din          (SC_qrdata[(idx+1)*C_QIBUF_WIDTH-1:idx*C_QIBUF_WIDTH]   ),//dly=7
+                .I_dven         (I_ap_start                                             ),
+                .I_raddr        (                                                       ),
+                .O_rdata        (                                                       )     
+            );
+        end
+    end
+endgenerate
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

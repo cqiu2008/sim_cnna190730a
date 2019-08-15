@@ -112,6 +112,7 @@ reg                          SR_sbuf0_index_neq                             ;
 reg                          SR_sbuf1_index_neq                             ; 
 reg                          SR_swap_start                                  ;
 wire                         SR_ndswap_start                                ;
+reg                          SR_ndswap_start_1d                             ;
 reg                          SR_swap_done                                   ;
 wire                         SR_ndswap_done                                 ;//dly=31
 reg                          SR_sbuf0_en                                    ;
@@ -429,11 +430,23 @@ u_ndswap_start(
 );
 
 always @(posedge I_clk)begin
-    if(SR_ndswap_start && I_ap_start)begin
-        SC_cig_valid <= 1'b1;
+    SR_ndswap_start_1d <= SR_ndswap_start   ;
+end
+
+always @(posedge I_clk)begin
+    if(I_ap_start)begin
+        if(SR_ndswap_start && (~SR_ndswap_start_1d))begin
+            SC_cig_valid <= 1'b1            ;
+        end
+        else if(SC_wog_over_flag)begin
+            SC_cig_valid <= 1'b0            ;
+        end
+        else begin
+            SC_cig_valid <= SC_cig_valid    ; 
+        end
     end
     else begin
-        SC_cig_valid <= 1'b0;
+        SC_cig_valid     <= 1'b0            ;
     end
 end
 
@@ -820,7 +833,7 @@ assign SC_ibuf_rdata[1] = I_ibuf1_rdata ;//dly=26
 
 genvar p_idq;
 generate
-    begin
+    begin:p_idq_s0
         for(p_idq=0;p_idq<C_PEPIX;p_idq=p_idq+1)begin:p_idq_s1
             always @(posedge I_clk)begin
                 SC_qwdata0[0][p_idq] <= SC_ndwindex_suite[0][p_idq] ? SC_sum[0]           : {C_QIBUF_WIDTH{1'b0}}   ;//dly=31
