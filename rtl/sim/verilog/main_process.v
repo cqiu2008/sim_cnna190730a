@@ -381,55 +381,55 @@ u_multi_slide_windows_flatten(
 // test_msw 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-always @(posedge I_clk)begin
-    S_fobase_addr   <= I_base_addr + I_opara_addr_img_out    ;
-end
+// always @(posedge I_clk)begin
+//     S_fobase_addr   <= I_base_addr + I_opara_addr_img_out    ;
+// end
 
-test_msw #(
-    .C_MEM_STYLE        (C_MEM_STYLE         ),
-    .C_POWER_OF_1ADOTS  (C_POWER_OF_1ADOTS   ),
-    .C_POWER_OF_PECI    (C_POWER_OF_PECI     ),
-    .C_POWER_OF_PECO    (C_POWER_OF_PECO     ),
-    .C_POWER_OF_PEPIX   (C_POWER_OF_PEPIX    ),
-    .C_POWER_OF_PECODIV (C_POWER_OF_PECODIV  ),
-    .C_POWER_OF_RDBPIX  (C_POWER_OF_RDBPIX   ),
-    .C_PEPIX            (C_PEPIX             ),
-    .C_DATA_WIDTH       (C_DATA_WIDTH        ),
-    .C_QIBUF_WIDTH      (C_QIBUF_WIDTH       ),
-    .C_LQIBUF_WIDTH     (C_LQIBUF_WIDTH      ),     
-    .C_CNV_K_WIDTH      (C_CNV_K_WIDTH       ),
-    .C_CNV_CH_WIDTH     (C_CNV_CH_WIDTH      ),
-    .C_DIM_WIDTH        (C_DIM_WIDTH         ),
-    .C_M_AXI_LEN_WIDTH  (C_M_AXI_LEN_WIDTH   ),
-    .C_M_AXI_ADDR_WIDTH (C_M_AXI_ADDR_WIDTH  ),
-    .C_M_AXI_DATA_WIDTH (C_M_AXI_DATA_WIDTH  ),
-    .C_RAM_ADDR_WIDTH   (C_RAM_ADDR_WIDTH    ),
-    .C_RAM_DATA_WIDTH   (C_RAM_DATA_WIDTH    ),
-    .C_RAM_LDATA_WIDTH  (C_RAM_LDATA_WIDTH   ))
-u_test_msw(
-    .I_clk              (I_clk               ),
-    .I_rst              (I_rst               ),
-    .I_allap_start      (I_ap_start          ),
-    .I_ap_start         (S_mpap_start        ),
-    .O_ap_done          (S_mpap_done         ),
-    .O_sraddr0          (S_sbuf0_raddr       ),//dly=0 
-    .O_sraddr1          (S_sbuf1_raddr       ), 
-    .I_srdata0          (S_sbuf0_rdata       ),//dly=3
-    .I_srdata1          (S_sbuf1_rdata       ),//128*8
-    .I_opara_height     (I_opara_height      ),
-    .I_opara_width      (I_opara_width       ),
-    .I_opara_co         (I_opara_co          ),
-    .I_base_addr        (S_fobase_addr       ),
-    .O_maxi_awlen       (O_fomaxi_awlen      ),
-    .I_maxi_awready     (I_fomaxi_awready    ),   
-    .O_maxi_awvalid     (O_fomaxi_awvalid    ),
-    .O_maxi_awaddr      (O_fomaxi_awaddr     ),
-    .I_maxi_wready      (I_fomaxi_wready     ),
-    .O_maxi_wvalid      (O_fomaxi_wvalid     ),
-    .O_maxi_wdata       (O_fomaxi_wdata      ),       
-    .I_maxi_bvalid      (I_fomaxi_bvalid     ),
-    .O_maxi_bready      (O_fomaxi_bready     )    
-);
+// test_msw #(
+//     .C_MEM_STYLE        (C_MEM_STYLE         ),
+//     .C_POWER_OF_1ADOTS  (C_POWER_OF_1ADOTS   ),
+//     .C_POWER_OF_PECI    (C_POWER_OF_PECI     ),
+//     .C_POWER_OF_PECO    (C_POWER_OF_PECO     ),
+//     .C_POWER_OF_PEPIX   (C_POWER_OF_PEPIX    ),
+//     .C_POWER_OF_PECODIV (C_POWER_OF_PECODIV  ),
+//     .C_POWER_OF_RDBPIX  (C_POWER_OF_RDBPIX   ),
+//     .C_PEPIX            (C_PEPIX             ),
+//     .C_DATA_WIDTH       (C_DATA_WIDTH        ),
+//     .C_QIBUF_WIDTH      (C_QIBUF_WIDTH       ),
+//     .C_LQIBUF_WIDTH     (C_LQIBUF_WIDTH      ),     
+//     .C_CNV_K_WIDTH      (C_CNV_K_WIDTH       ),
+//     .C_CNV_CH_WIDTH     (C_CNV_CH_WIDTH      ),
+//     .C_DIM_WIDTH        (C_DIM_WIDTH         ),
+//     .C_M_AXI_LEN_WIDTH  (C_M_AXI_LEN_WIDTH   ),
+//     .C_M_AXI_ADDR_WIDTH (C_M_AXI_ADDR_WIDTH  ),
+//     .C_M_AXI_DATA_WIDTH (C_M_AXI_DATA_WIDTH  ),
+//     .C_RAM_ADDR_WIDTH   (C_RAM_ADDR_WIDTH    ),
+//     .C_RAM_DATA_WIDTH   (C_RAM_DATA_WIDTH    ),
+//     .C_RAM_LDATA_WIDTH  (C_RAM_LDATA_WIDTH   ))
+// u_test_msw(
+//     .I_clk              (I_clk               ),
+//     .I_rst              (I_rst               ),
+//     .I_allap_start      (I_ap_start          ),
+//     .I_ap_start         (S_mpap_start        ),
+//     .O_ap_done          (S_mpap_done         ),
+//     .O_sraddr0          (S_sbuf0_raddr       ),//dly=0 
+//     .O_sraddr1          (S_sbuf1_raddr       ), 
+//     .I_srdata0          (S_sbuf0_rdata       ),//dly=3
+//     .I_srdata1          (S_sbuf1_rdata       ),//128*8
+//     .I_opara_height     (I_opara_height      ),
+//     .I_opara_width      (I_opara_width       ),
+//     .I_opara_co         (I_opara_co          ),
+//     .I_base_addr        (S_fobase_addr       ),
+//     .O_maxi_awlen       (O_fomaxi_awlen      ),
+//     .I_maxi_awready     (I_fomaxi_awready    ),   
+//     .O_maxi_awvalid     (O_fomaxi_awvalid    ),
+//     .O_maxi_awaddr      (O_fomaxi_awaddr     ),
+//     .I_maxi_wready      (I_fomaxi_wready     ),
+//     .O_maxi_wvalid      (O_fomaxi_wvalid     ),
+//     .O_maxi_wdata       (O_fomaxi_wdata      ),       
+//     .I_maxi_bvalid      (I_fomaxi_bvalid     ),
+//     .O_maxi_bready      (O_fomaxi_bready     )    
+// );
 
 process_qbuf #(
     .C_MEM_STYLE         (C_MEM_STYLE          ),

@@ -41,6 +41,7 @@ parameter
     C_M_AXI_LEN_WIDTH       = 32        ,
     C_M_AXI_ADDR_WIDTH      = 32        ,
     C_M_AXI_DATA_WIDTH      = 128       ,
+    C_COEF_DATA             = 8*16*32   , 
     C_RAM_ADDR_WIDTH        = 9         ,
     C_RAM_DATA_WIDTH        = 128       
 )(
@@ -56,6 +57,9 @@ input       [    C_CNV_CH_WIDTH-1:0]I_next_ci       ,
 input       [    C_CNV_CH_WIDTH-1:0]I_next_co       ,
 input       [C_M_AXI_ADDR_WIDTH-1:0]I_next_mem_addr ,
 input       [C_M_AXI_ADDR_WIDTH-1:0]I_base_addr     ,
+// inter mem bus 
+input       [  C_RAM_ADDR_WIDTH-1:0]I_craddr        ,        
+output      [       C_COEF_DATA-1:0]O_crdata        ,
 // master read address channel
 output reg  [C_M_AXI_LEN_WIDTH-1 :0]O_maxi_arlen    ,
 input                               I_maxi_arready  ,   
@@ -77,15 +81,13 @@ localparam   C_M3_WIDTH       = C_M1_WIDTH + C_M2_WIDTH                 ;
 localparam   C_AP_SHIFT       = 16                                      ;
 localparam   C_PECI_NUM       = 1 << C_POWER_OF_PECI                    ; 
 localparam   C_PECODIV_NUM    = 1 << C_POWER_OF_PECODIV                 ; 
-localparam   C_D0W            = 1                           ;//valid
-localparam   C_D1W            = C_M_AXI_DATA_WIDTH          ;//maxi_rdata
-localparam   C_D2W            = C_NCH_GROUP                 ;//cog
-localparam   C_D3W            = C_POWER_OF_PECI+1           ;//ci
-localparam   C_D4W            = C_NCH_GROUP                 ;//cig
-localparam   C_D5W            = C_FILTER_WIDTH              ;//filter
-localparam   C_DLY_WIDTH      = C_D0W + C_D1W + 
-                                C_D2W + C_D3W + 
-                                C_D4W + C_D5W ; 
+localparam   C_D0W            = 1                                       ;//valid
+localparam   C_D1W            = C_M_AXI_DATA_WIDTH                      ;//maxi_rdata
+localparam   C_D2W            = C_NCH_GROUP                             ;//cog
+localparam   C_D3W            = C_POWER_OF_PECI+1                       ;//ci
+localparam   C_D4W            = C_NCH_GROUP                             ;//cig
+localparam   C_D5W            = C_FILTER_WIDTH                          ;//filter
+localparam   C_DLY_WIDTH      = C_D0W+C_D1W+C_D2W+C_D3W+C_D4W+C_D5W     ; 
 
 wire [       C_DLY_WIDTH-1:0]S_dly                          ;
 reg  [       C_DLY_WIDTH-1:0]S_1dly                         ;
@@ -149,7 +151,8 @@ reg  [  C_RAM_ADDR_WIDTH-1:0]S_blk_id_t4                    ;
 reg  [  C_RAM_ADDR_WIDTH-1:0]S_blk_id_t5                    ;
 reg                          S_ap_done                      ;
 reg                          S_ap_done_1d                   ;
-wire S_wren[C_PECI_NUM-1:0][C_PECODIV_NUM-1:0]              ;
+wire S_wren[C_PECI_NUM-1:0][0:C_PECODIV_NUM-1]              ;
+wire [C_M_AXI_LEN_WIDTH-1 :0]S_maxi_arlen                   ; 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Calculate blk id addr
@@ -164,7 +167,7 @@ always @(posedge I_clk)begin
     S_blk_id_t3 <= (S_cog_cnt[C_NCH_GROUP-1:1]);
     S_blk_id_t4 <= S_blk_id_t1 + S_blk_id_t2;
     S_blk_id_t5 <= S_blk_id_t4 + S_blk_id_t3;
-    S_blk_id    <= S_blk_id_t5;
+    S_blk_id    <= I_ap_start ? S_blk_id_t5 : I_craddr ;
 end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -205,6 +208,14 @@ U0_next_ci_group(
 
 assign S_next_ci_align = {S_next_ci_group,{(C_POWER_OF_1ADOTS){1'b0}}};
 
+align #(
+    .C_IN_WIDTH  (C_M3_WIDTH        ), 
+    .C_OUT_WIDTH (C_M_AXI_LEN_WIDTH ))
+u_maxi_arlen(
+    .I_din (S_m3                    ),
+    .O_dout(S_maxi_arlen            )
+);
+
 always @(posedge I_clk)begin
     S_next_kernel_1d              <= I_next_kernel                                  ;
     S_next_ci_1d                  <= I_next_ci                                      ;  
@@ -222,7 +233,7 @@ always @(posedge I_clk)begin
     S_m1                          <= S_peci_const * S_next_co_group_1d              ;
     S_m2                          <= S_next_filter_1d * S_next_ci_group_1d          ;
     S_m3                          <= S_m1 * S_m2                                    ;
-    O_maxi_arlen                  <= {{(C_M_AXI_LEN_WIDTH-C_M3_WIDTH){1'b0}},S_m3[C_M3_WIDTH-1:0]};
+    O_maxi_arlen                  <= S_maxi_arlen                                   ; 
     S_ap_start_shift              <= {S_ap_start_shift[C_AP_SHIFT-2:0],I_ap_start}  ;
 end
 
@@ -290,13 +301,13 @@ U0_loop2_ci_cnt (
 cm_cnt #(
     .C_WIDTH(C_NCH_GROUP))
 U0_loop3_cig_cnt (
-.I_clk              (I_clk                                                      ),
-.I_cnt_en           (S_ap_start_nd                                              ),
-.I_lowest_cnt_valid (S_cog_valid                                                ),
-.I_cnt_valid        (S_cig_valid                                                ),
-.I_cnt_upper        (S_next_ci_group_1d                                         ),
-.O_over_flag        (S_cig_over_flag                                            ),
-.O_cnt              (S_cig_cnt                                                  )
+.I_clk              (I_clk                  ),
+.I_cnt_en           (S_ap_start_nd          ),
+.I_lowest_cnt_valid (S_cog_valid            ),
+.I_cnt_valid        (S_cig_valid            ),
+.I_cnt_upper        (S_next_ci_group_1d     ),
+.O_over_flag        (S_cig_over_flag        ),
+.O_cnt              (S_cig_cnt              )
 );
 
 cm_cnt #(
@@ -351,11 +362,13 @@ generate
                 .ASIZE      (C_RAM_ADDR_WIDTH        ),
                 .DSIZE      (C_RAM_DATA_WIDTH        ))
             u_wbuf(
-                .I_clk  (I_clk                                      ),
-                .I_addr	(S_blk_id                                   ),
-                .I_data	(S_nd_maxi_rdata                            ),
-                .I_wr	(S_nd_co_valid && S_wren[ci_idx][co_idx]    ),
-                .O_data	(                                           )
+                .I_clk  (I_clk                                                  ),
+                .I_addr	(S_blk_id                                               ),
+                .I_data	(S_nd_maxi_rdata                                        ),
+                .I_wr	(S_nd_co_valid && S_wren[ci_idx][co_idx]                ),
+                .O_data	(O_crdata[
+                            (co_idx+ci_idx*C_PECODIV_NUM+1)*C_RAM_DATA_WIDTH-1:
+                            (co_idx+ci_idx*C_PECODIV_NUM)*C_RAM_DATA_WIDTH]     )
             );
         end
     end

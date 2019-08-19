@@ -72,35 +72,28 @@ wire     [C_OUT-1            :0]S_b                 ;
 wire     [C_OUT-1            :0]S_sum               ;
 reg                             S_sum_valid         ;
 reg                             S_sum_valid_lck     ;
-
 wire     [C_OUT-1            :0]S_c1sum             ;
 wire                            S_c1sum_p4_valid    ; 
-
 wire     [C_OUT-1            :0]S_c2sum             ;
 wire                            S_c2sum_p4_valid    ; 
 wire                            S_c2sum_valid       ; 
-
 wire     [C_OUT-1            :0]S_c3sum             ;
 wire                            S_c3sum_p4_valid    ; 
 reg                             S_c3sum_valid       ; 
-
 wire     [C_OUT-1            :0]S_m3sum             ;
 wire                            S_m3sum_p4_valid    ; 
 reg                             S_m3sum_valid       ; 
-
-reg                             SL_equal1       ;
-reg                             SL_equal2       ;
-reg                             SL_equal3       ;
-reg                             SL_more3        ;
-reg                             S_equal         ;
-
-wire                            SL_equal1c      ;
-wire                            SL_equal2c      ;
-wire                            SL_equal3c      ;
-wire                            SL_more3c       ;
-wire                            S_equalc        ;
-
-reg                             S_sum_base_valid;
+reg                             SL_equal1           ;
+reg                             SL_equal2           ;
+reg                             SL_equal3           ;
+reg                             SL_more3            ;
+reg                             S_equal             ;
+wire                            SL_equal1c          ;
+wire                            SL_equal2c          ;
+wire                            SL_equal3c          ;
+wire                            SL_more3c           ;
+wire                            S_equalc            ;
+reg                             S_sum_base_valid    ;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // calculate cases of 4 

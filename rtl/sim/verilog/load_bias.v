@@ -46,6 +46,9 @@ output                              O_ap_done       ,
 // reg 
 input       [C_M_AXI_ADDR_WIDTH-1:0]I_base_addr     ,
 input       [C_RAM_ADDR_WIDTH-1  :0]I_len           ,
+// inter mem bus 
+input       [  C_RAM_ADDR_WIDTH-1:0]I_braddr        ,        
+output      [  C_RAM_DATA_WIDTH-1:0]O_brdata        ,
 // master read address channel
 output      [C_M_AXI_LEN_WIDTH-1 :0]O_maxi_arlen    ,
 input                               I_maxi_arready  ,   
@@ -62,6 +65,15 @@ input       [C_M_AXI_DATA_WIDTH-1:0]I_maxi_rdata
 wire  [C_RAM_ADDR_WIDTH-1  :0]S_waddr         ;
 wire  [C_RAM_DATA_WIDTH-1  :0]S_wdata         ;
 wire                          S_wr            ;
+reg   [C_RAM_ADDR_WIDTH-1  :0]S_waddr_1d      ;
+reg   [C_RAM_DATA_WIDTH-1  :0]S_wdata_1d      ;
+reg                           S_wr_1d         ;
+
+always @(posedge I_clk)begin
+    S_waddr_1d  <= I_ap_start ? S_waddr : I_braddr  ;
+    S_wdata_1d  <= S_wdata                          ;
+    S_wr_1d     <= S_wr                             ;
+end
 
 axibus2rambus #(
     .C_M_AXI_LEN_WIDTH   (C_M_AXI_LEN_WIDTH    ),
@@ -92,11 +104,11 @@ spram #(
     .ASIZE     ( C_RAM_ADDR_WIDTH   ), 
     .DSIZE     ( C_RAM_DATA_WIDTH   ))
 u0_spram (
-    .I_clk	 (I_clk	    ),
-    .I_addr	 (S_waddr	),
-    .I_data	 (S_wdata	),
-    .I_wr	 (S_wr	    ),
-    .O_data	 (          )
+    .I_clk	 (I_clk	        ),
+    .I_addr	 (S_waddr_1d	),
+    .I_data	 (S_wdata_1d	),
+    .I_wr	 (S_wr_1d	    ),
+    .O_data	 (O_brdata      )
 );
 
 endmodule

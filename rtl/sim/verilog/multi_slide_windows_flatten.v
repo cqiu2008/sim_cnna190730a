@@ -689,18 +689,18 @@ generate
                 //calculate SC_pfirst
                 //calculate SC_k 
                 always @(posedge I_clk)begin
-                    SC_pfirst[ws_idx][p_idx] <= SC_idforpix[ws_idx][p_idx] * SL_wpart                           ;//dly=24
-                    SC_k_t1[ws_idx][p_idx]   <= $signed(SC_n1dwws[ws_idx]) - $signed(SC_pfirst[ws_idx][p_idx])  ;//dly=25
-                    SC_k[ws_idx][p_idx]      <= $signed(SC_k_t1[ws_idx][p_idx])-$signed(SL_p_stride_w[p_idx])   ;//dly=26
+                    SC_pfirst[ws_idx][p_idx] <= SC_idforpix[ws_idx][p_idx] * SL_wpart                               ;//dly=24
+                    SC_k_t1[ws_idx][p_idx]   <= $signed(SC_n1dwws[ws_idx]) - $signed(SC_pfirst[ws_idx][p_idx])      ;//dly=25
+                    SC_k[ws_idx][p_idx]      <= $signed(SC_k_t1[ws_idx][p_idx])-$signed(SL_p_stride_w[p_idx])       ;//dly=26
                 end
                 //calculate SC_depth
                 always @(posedge I_clk)begin
-                    SC_depth_t1[ws_idx][p_idx]  <= SC_idforpix[ws_idx][p_idx] * SL_kernel_w_ci_group        ;//dly=24
-                    SC_depth_t2[ws_idx][p_idx]  <= SC_depth_t1[ws_idx][p_idx] + SC_n1dcig_cnt               ;//dly=25 
-                    SC_depth_t2a[ws_idx][p_idx] <= SC_depth_t2[ws_idx][p_idx]                               ;//dly=26 
-                    SC_depth_t2b[ws_idx][p_idx] <= SC_depth_t2a[ws_idx][p_idx]                              ;//dly=27 
-                    SC_depth_t3[ws_idx][p_idx]  <= SC_k[ws_idx][p_idx] * SL_ci_group_1d                     ;//dly=27 
-                    SC_depth[ws_idx][p_idx]     <= SC_depth_t3[ws_idx][p_idx] + SC_depth_t2b[ws_idx][p_idx] ;//dly=28
+                    SC_depth_t1[ws_idx][p_idx]  <= SC_idforpix[ws_idx][p_idx] * SL_kernel_w_ci_group                ;//dly=24
+                    SC_depth_t2[ws_idx][p_idx]  <= SC_depth_t1[ws_idx][p_idx] + SC_n1dcig_cnt                       ;//dly=25 
+                    SC_depth_t2a[ws_idx][p_idx] <= SC_depth_t2[ws_idx][p_idx]                                       ;//dly=26 
+                    SC_depth_t2b[ws_idx][p_idx] <= SC_depth_t2a[ws_idx][p_idx]                                      ;//dly=27 
+                    SC_depth_t3[ws_idx][p_idx]  <= SC_k[ws_idx][p_idx] * SL_ci_group_1d                             ;//dly=27 
+                    SC_depth[ws_idx][p_idx]     <= SC_depth_t3[ws_idx][p_idx] + SC_depth_t2b[ws_idx][p_idx]         ;//dly=28
                 end
 
                 suite_range #(
@@ -736,14 +736,14 @@ generate
             end
             //sbuf write process
             always @(posedge I_clk)begin
-                SC_addr0[0][p_idx]  <= SR_sbuf0_en               ? SC_depth[0][p_idx] : I_sraddr0  ;//dly=29
-                SC_addr0[1][p_idx]  <= SR_sbuf0_en               ? SC_depth[1][p_idx] : I_sraddr1  ; 
-                SC_addr1[0][p_idx]  <= SR_sbuf1_en               ? SC_depth[0][p_idx] : I_sraddr0  ;
-                SC_addr1[1][p_idx]  <= SR_sbuf1_en               ? SC_depth[1][p_idx] : I_sraddr1  ;
-                SC_wdata0[0][p_idx] <= SC_windex_suite[0][p_idx] ? SC_ndibuf_rdata[0] : 0         ;//dly=29
-                SC_wdata0[1][p_idx] <= SC_windex_suite[1][p_idx] ? SC_ndibuf_rdata[1] : 0         ;
-                SC_wdata1[0][p_idx] <= SC_windex_suite[0][p_idx] ? SC_ndibuf_rdata[0] : 0         ;
-                SC_wdata1[1][p_idx] <= SC_windex_suite[1][p_idx] ? SC_ndibuf_rdata[1] : 0         ;
+                SC_addr0[0][p_idx]  <= SR_sbuf0_en               ? SC_depth[0][p_idx] : I_sraddr0   ;//dly=29
+                SC_addr0[1][p_idx]  <= SR_sbuf0_en               ? SC_depth[1][p_idx] : I_sraddr1   ; 
+                SC_addr1[0][p_idx]  <= SR_sbuf1_en               ? SC_depth[0][p_idx] : I_sraddr0   ;
+                SC_addr1[1][p_idx]  <= SR_sbuf1_en               ? SC_depth[1][p_idx] : I_sraddr1   ;
+                SC_wdata0[0][p_idx] <= SC_windex_suite[0][p_idx] ? SC_ndibuf_rdata[0] : 0           ;//dly=29
+                SC_wdata0[1][p_idx] <= SC_windex_suite[1][p_idx] ? SC_ndibuf_rdata[1] : 0           ;
+                SC_wdata1[0][p_idx] <= SC_windex_suite[0][p_idx] ? SC_ndibuf_rdata[0] : 0           ;
+                SC_wdata1[1][p_idx] <= SC_windex_suite[1][p_idx] ? SC_ndibuf_rdata[1] : 0           ;
             end
             //write to sbuf  
             dpram #(

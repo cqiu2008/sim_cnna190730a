@@ -208,11 +208,14 @@ parameter C_S_AXI_AXILITE_WSTRB_WIDTH = (32 / 8);
 parameter C_S_AXI_WSTRB_WIDTH = (32 / 8);
 parameter C_M_AXI_WEIGHTS_DDR_WSTRB_WIDTH = (128 / 8);
 parameter C_M_AXI_WSTRB_WIDTH = (32 / 8);
-parameter C_M_AXI_FIN_DDR_WSTRB_WIDTH = (128 / 8);
-parameter C_M_AXI_FOUT_DDR_WSTRB_WIDTH = (128 / 8);
-
-parameter C_M_AXI_LEN_WIDTH   = 32   ;
-parameter C_M_AXI_ADDR_WIDTH  = 32   ;
+parameter C_M_AXI_FIN_DDR_WSTRB_WIDTH = (128 / 8)   ;
+parameter C_M_AXI_FOUT_DDR_WSTRB_WIDTH = (128 / 8)  ;
+parameter C_M_AXI_LEN_WIDTH   = 32                  ;
+parameter C_M_AXI_ADDR_WIDTH  = 32                  ;
+parameter C_RAM_ADDR_WIDTH    = 9                   ; 
+parameter C_RAM_DATA_WIDTH    = 128                 ; 
+parameter C_COEF_DATA         = 8*16*32             ;
+parameter C_BIAS_DATA         = 32                  ;
 
 input   ap_clk;
 input   ap_rst_n;
@@ -370,11 +373,17 @@ input   s_axi_axilite_BREADY;
 output  [1:0] s_axi_axilite_BRESP;
 output   interrupt;
 
-reg    ap_rst_n_inv;
-wire    ap_start;
-wire   ap_done;
-wire  ap_idle;
-wire  ap_ready;
+reg         ap_rst_n_inv    ;
+reg  [1:0]  S_ap_cnt        ;
+wire        ap_start        ;
+reg         ap_start_1d     ; 
+reg         ap_done         ;
+reg         S_wap_start     ;
+wire        S_wap_done      ;
+reg         S_map_start     ;
+wire        S_map_done      ;
+wire        ap_idle         ;
+wire        ap_ready        ;
 wire   [31:0] wddr_V;
 reg   [31:0] wddr_V_0_data_reg;
 reg    wddr_V_0_vld_reg;
@@ -628,11 +637,9 @@ wire   [1:0] FOUT_DDR_BRESP;
 wire   [0:0] FOUT_DDR_BID;
 wire   [0:0] FOUT_DDR_BUSER;
 
-
 // fi master channel
 localparam C_M_AXI_FIADDR_WIDTH = C_M_AXI_FIN_DDR_ADDR_WIDTH   ;
 localparam C_M_AXI_FIDATA_WIDTH = C_M_AXI_FIN_DDR_DATA_WIDTH   ; 
-
 localparam C_M_AXI_FOADDR_WIDTH = C_M_AXI_FIN_DDR_ADDR_WIDTH   ;
 localparam C_M_AXI_FODATA_WIDTH = C_M_AXI_FIN_DDR_DATA_WIDTH   ; 
 
@@ -653,6 +660,10 @@ wire                            S_fomaxi_wvalid    ;
 wire  [C_M_AXI_FODATA_WIDTH-1:0]S_fomaxi_wdata     ;    
 wire                            S_fomaxi_bvalid    ; 
 wire                            S_fomaxi_bready    ; 
+wire  [  C_RAM_ADDR_WIDTH-1  :0]S_craddr           ;        
+wire  [       C_COEF_DATA-1  :0]S_crdata           ;
+wire  [  C_RAM_ADDR_WIDTH-1  :0]S_braddr           ;        
+wire  [  C_RAM_DATA_WIDTH-1  :0]S_brdata           ;
 
 cnna_axilite_s_axi #(
     .C_S_AXI_ADDR_WIDTH( C_S_AXI_AXILITE_ADDR_WIDTH ),
@@ -768,130 +779,130 @@ cnna_axilite_s_axi_U(
     .layer_poolPara_pool_type(layer_poolPara_pool_type)
 );
 
-// cnna_WEIGHTS_DDR_m_axi #(
-//     .CONSERVATIVE( 0 ),
-//     .USER_DW( 128 ),
-//     .USER_AW( 32 ),
-//     .USER_MAXREQS( 5 ),
-//     .NUM_READ_OUTSTANDING( 16 ),
-//     .NUM_WRITE_OUTSTANDING( 16 ),
-//     .MAX_READ_BURST_LENGTH( 16 ),
-//     .MAX_WRITE_BURST_LENGTH( 16 ),
-//     .C_M_AXI_ID_WIDTH( C_M_AXI_WEIGHTS_DDR_ID_WIDTH ),
-//     .C_M_AXI_ADDR_WIDTH( C_M_AXI_WEIGHTS_DDR_ADDR_WIDTH ),
-//     .C_M_AXI_DATA_WIDTH( C_M_AXI_WEIGHTS_DDR_DATA_WIDTH ),
-//     .C_M_AXI_AWUSER_WIDTH( C_M_AXI_WEIGHTS_DDR_AWUSER_WIDTH ),
-//     .C_M_AXI_ARUSER_WIDTH( C_M_AXI_WEIGHTS_DDR_ARUSER_WIDTH ),
-//     .C_M_AXI_WUSER_WIDTH( C_M_AXI_WEIGHTS_DDR_WUSER_WIDTH ),
-//     .C_M_AXI_RUSER_WIDTH( C_M_AXI_WEIGHTS_DDR_RUSER_WIDTH ),
-//     .C_M_AXI_BUSER_WIDTH( C_M_AXI_WEIGHTS_DDR_BUSER_WIDTH ),
-//     .C_USER_VALUE( C_M_AXI_WEIGHTS_DDR_USER_VALUE ),
-//     .C_PROT_VALUE( C_M_AXI_WEIGHTS_DDR_PROT_VALUE ),
-//     .C_CACHE_VALUE( C_M_AXI_WEIGHTS_DDR_CACHE_VALUE ))
-// cnna_WEIGHTS_DDR_m_axi_U(
-//     .AWVALID(m_axi_WEIGHTS_DDR_AWVALID),
-//     .AWREADY(m_axi_WEIGHTS_DDR_AWREADY),
-//     .AWADDR(m_axi_WEIGHTS_DDR_AWADDR),
-//     .AWID(m_axi_WEIGHTS_DDR_AWID),
-//     .AWLEN(m_axi_WEIGHTS_DDR_AWLEN),
-//     .AWSIZE(m_axi_WEIGHTS_DDR_AWSIZE),
-//     .AWBURST(m_axi_WEIGHTS_DDR_AWBURST),
-//     .AWLOCK(m_axi_WEIGHTS_DDR_AWLOCK),
-//     .AWCACHE(m_axi_WEIGHTS_DDR_AWCACHE),
-//     .AWPROT(m_axi_WEIGHTS_DDR_AWPROT),
-//     .AWQOS(m_axi_WEIGHTS_DDR_AWQOS),
-//     .AWREGION(m_axi_WEIGHTS_DDR_AWREGION),
-//     .AWUSER(m_axi_WEIGHTS_DDR_AWUSER),
-//     .WVALID(m_axi_WEIGHTS_DDR_WVALID),
-//     .WREADY(m_axi_WEIGHTS_DDR_WREADY),
-//     .WDATA(m_axi_WEIGHTS_DDR_WDATA),
-//     .WSTRB(m_axi_WEIGHTS_DDR_WSTRB),
-//     .WLAST(m_axi_WEIGHTS_DDR_WLAST),
-//     .WID(m_axi_WEIGHTS_DDR_WID),
-//     .WUSER(m_axi_WEIGHTS_DDR_WUSER),
-//     .ARVALID(m_axi_WEIGHTS_DDR_ARVALID),
-//     .ARREADY(m_axi_WEIGHTS_DDR_ARREADY),
-//     .ARADDR(m_axi_WEIGHTS_DDR_ARADDR),
-//     .ARID(m_axi_WEIGHTS_DDR_ARID),
-//     .ARLEN(m_axi_WEIGHTS_DDR_ARLEN),
-//     .ARSIZE(m_axi_WEIGHTS_DDR_ARSIZE),
-//     .ARBURST(m_axi_WEIGHTS_DDR_ARBURST),
-//     .ARLOCK(m_axi_WEIGHTS_DDR_ARLOCK),
-//     .ARCACHE(m_axi_WEIGHTS_DDR_ARCACHE),
-//     .ARPROT(m_axi_WEIGHTS_DDR_ARPROT),
-//     .ARQOS(m_axi_WEIGHTS_DDR_ARQOS),
-//     .ARREGION(m_axi_WEIGHTS_DDR_ARREGION),
-//     .ARUSER(m_axi_WEIGHTS_DDR_ARUSER),
-//     .RVALID(m_axi_WEIGHTS_DDR_RVALID),
-//     .RREADY(m_axi_WEIGHTS_DDR_RREADY),
-//     .RDATA(m_axi_WEIGHTS_DDR_RDATA),
-//     .RLAST(m_axi_WEIGHTS_DDR_RLAST),
-//     .RID(m_axi_WEIGHTS_DDR_RID),
-//     .RUSER(m_axi_WEIGHTS_DDR_RUSER),
-//     .RRESP(m_axi_WEIGHTS_DDR_RRESP),
-//     .BVALID(m_axi_WEIGHTS_DDR_BVALID),
-//     .BREADY(m_axi_WEIGHTS_DDR_BREADY),
-//     .BRESP(m_axi_WEIGHTS_DDR_BRESP),
-//     .BID(m_axi_WEIGHTS_DDR_BID),
-//     .BUSER(m_axi_WEIGHTS_DDR_BUSER),
-//     .ACLK(ap_clk),
-//     .ARESET(ap_rst_n_inv),
-//     .ACLK_EN(1'b1),
-//     .I_ARVALID(WEIGHTS_DDR_ARVALID),
-//     .I_ARREADY(WEIGHTS_DDR_ARREADY),
-//     .I_ARADDR(WEIGHTS_DDR_ARADDR),
-// //    .I_ARID(WEIGHTS_DDR_ARID),
-//     .I_ARID(1'b0),
-//     .I_ARLEN(WEIGHTS_DDR_ARLEN),
-//     //.I_ARSIZE(WEIGHTS_DDR_ARSIZE),
-//     .I_ARSIZE(3'b0),
-//     //.I_ARLOCK(WEIGHTS_DDR_ARLOCK),
-//     .I_ARLOCK(2'b0),
-//     //.I_ARCACHE(WEIGHTS_DDR_ARCACHE),
-//     .I_ARCACHE(4'b0),
-//     //.I_ARQOS(WEIGHTS_DDR_ARQOS),
-//     .I_ARQOS(4'b0),
-//     //.I_ARPROT(WEIGHTS_DDR_ARPROT),
-//     .I_ARPROT(3'b0),
-//     //.I_ARUSER(WEIGHTS_DDR_ARUSER),
-//     .I_ARUSER(1'b0),
-//     //.I_ARBURST(WEIGHTS_DDR_ARBURST),
-//     .I_ARBURST(2'b0),
-//     //.I_ARREGION(WEIGHTS_DDR_ARREGION),
-//     .I_ARREGION(4'b0),
-//     .I_RVALID(WEIGHTS_DDR_RVALID),
-//     .I_RREADY(WEIGHTS_DDR_RREADY),
-//     .I_RDATA(WEIGHTS_DDR_RDATA),
-//     .I_RID(WEIGHTS_DDR_RID),
-//     .I_RUSER(WEIGHTS_DDR_RUSER),
-//     .I_RRESP(WEIGHTS_DDR_RRESP),
-//     .I_RLAST(WEIGHTS_DDR_RLAST),
-//     .I_AWVALID(1'b0),
-//     .I_AWREADY(WEIGHTS_DDR_AWREADY),
-//     .I_AWADDR(32'd0),
-//     .I_AWID(1'd0),
-//     .I_AWLEN(32'd0),
-//     .I_AWSIZE(3'd0),
-//     .I_AWLOCK(2'd0),
-//     .I_AWCACHE(4'd0),
-//     .I_AWQOS(4'd0),
-//     .I_AWPROT(3'd0),
-//     .I_AWUSER(1'd0),
-//     .I_AWBURST(2'd0),
-//     .I_AWREGION(4'd0),
-//     .I_WVALID(1'b0),
-//     .I_WREADY(WEIGHTS_DDR_WREADY),
-//     .I_WDATA(128'd0),
-//     .I_WID(1'd0),
-//     .I_WUSER(1'd0),
-//     .I_WLAST(1'b0),
-//     .I_WSTRB(16'd0),
-//     .I_BVALID(WEIGHTS_DDR_BVALID),
-//     .I_BREADY(1'b0),
-//     .I_BRESP(WEIGHTS_DDR_BRESP),
-//     .I_BID(WEIGHTS_DDR_BID),
-//     .I_BUSER(WEIGHTS_DDR_BUSER)
-// );
+cnna_WEIGHTS_DDR_m_axi #(
+    .CONSERVATIVE( 0 ),
+    .USER_DW( 128 ),
+    .USER_AW( 32 ),
+    .USER_MAXREQS( 5 ),
+    .NUM_READ_OUTSTANDING( 16 ),
+    .NUM_WRITE_OUTSTANDING( 16 ),
+    .MAX_READ_BURST_LENGTH( 16 ),
+    .MAX_WRITE_BURST_LENGTH( 16 ),
+    .C_M_AXI_ID_WIDTH( C_M_AXI_WEIGHTS_DDR_ID_WIDTH ),
+    .C_M_AXI_ADDR_WIDTH( C_M_AXI_WEIGHTS_DDR_ADDR_WIDTH ),
+    .C_M_AXI_DATA_WIDTH( C_M_AXI_WEIGHTS_DDR_DATA_WIDTH ),
+    .C_M_AXI_AWUSER_WIDTH( C_M_AXI_WEIGHTS_DDR_AWUSER_WIDTH ),
+    .C_M_AXI_ARUSER_WIDTH( C_M_AXI_WEIGHTS_DDR_ARUSER_WIDTH ),
+    .C_M_AXI_WUSER_WIDTH( C_M_AXI_WEIGHTS_DDR_WUSER_WIDTH ),
+    .C_M_AXI_RUSER_WIDTH( C_M_AXI_WEIGHTS_DDR_RUSER_WIDTH ),
+    .C_M_AXI_BUSER_WIDTH( C_M_AXI_WEIGHTS_DDR_BUSER_WIDTH ),
+    .C_USER_VALUE( C_M_AXI_WEIGHTS_DDR_USER_VALUE ),
+    .C_PROT_VALUE( C_M_AXI_WEIGHTS_DDR_PROT_VALUE ),
+    .C_CACHE_VALUE( C_M_AXI_WEIGHTS_DDR_CACHE_VALUE ))
+cnna_WEIGHTS_DDR_m_axi_U(
+    .AWVALID(m_axi_WEIGHTS_DDR_AWVALID),
+    .AWREADY(m_axi_WEIGHTS_DDR_AWREADY),
+    .AWADDR(m_axi_WEIGHTS_DDR_AWADDR),
+    .AWID(m_axi_WEIGHTS_DDR_AWID),
+    .AWLEN(m_axi_WEIGHTS_DDR_AWLEN),
+    .AWSIZE(m_axi_WEIGHTS_DDR_AWSIZE),
+    .AWBURST(m_axi_WEIGHTS_DDR_AWBURST),
+    .AWLOCK(m_axi_WEIGHTS_DDR_AWLOCK),
+    .AWCACHE(m_axi_WEIGHTS_DDR_AWCACHE),
+    .AWPROT(m_axi_WEIGHTS_DDR_AWPROT),
+    .AWQOS(m_axi_WEIGHTS_DDR_AWQOS),
+    .AWREGION(m_axi_WEIGHTS_DDR_AWREGION),
+    .AWUSER(m_axi_WEIGHTS_DDR_AWUSER),
+    .WVALID(m_axi_WEIGHTS_DDR_WVALID),
+    .WREADY(m_axi_WEIGHTS_DDR_WREADY),
+    .WDATA(m_axi_WEIGHTS_DDR_WDATA),
+    .WSTRB(m_axi_WEIGHTS_DDR_WSTRB),
+    .WLAST(m_axi_WEIGHTS_DDR_WLAST),
+    .WID(m_axi_WEIGHTS_DDR_WID),
+    .WUSER(m_axi_WEIGHTS_DDR_WUSER),
+    .ARVALID(m_axi_WEIGHTS_DDR_ARVALID),
+    .ARREADY(m_axi_WEIGHTS_DDR_ARREADY),
+    .ARADDR(m_axi_WEIGHTS_DDR_ARADDR),
+    .ARID(m_axi_WEIGHTS_DDR_ARID),
+    .ARLEN(m_axi_WEIGHTS_DDR_ARLEN),
+    .ARSIZE(m_axi_WEIGHTS_DDR_ARSIZE),
+    .ARBURST(m_axi_WEIGHTS_DDR_ARBURST),
+    .ARLOCK(m_axi_WEIGHTS_DDR_ARLOCK),
+    .ARCACHE(m_axi_WEIGHTS_DDR_ARCACHE),
+    .ARPROT(m_axi_WEIGHTS_DDR_ARPROT),
+    .ARQOS(m_axi_WEIGHTS_DDR_ARQOS),
+    .ARREGION(m_axi_WEIGHTS_DDR_ARREGION),
+    .ARUSER(m_axi_WEIGHTS_DDR_ARUSER),
+    .RVALID(m_axi_WEIGHTS_DDR_RVALID),
+    .RREADY(m_axi_WEIGHTS_DDR_RREADY),
+    .RDATA(m_axi_WEIGHTS_DDR_RDATA),
+    .RLAST(m_axi_WEIGHTS_DDR_RLAST),
+    .RID(m_axi_WEIGHTS_DDR_RID),
+    .RUSER(m_axi_WEIGHTS_DDR_RUSER),
+    .RRESP(m_axi_WEIGHTS_DDR_RRESP),
+    .BVALID(m_axi_WEIGHTS_DDR_BVALID),
+    .BREADY(m_axi_WEIGHTS_DDR_BREADY),
+    .BRESP(m_axi_WEIGHTS_DDR_BRESP),
+    .BID(m_axi_WEIGHTS_DDR_BID),
+    .BUSER(m_axi_WEIGHTS_DDR_BUSER),
+    .ACLK(ap_clk),
+    .ARESET(ap_rst_n_inv),
+    .ACLK_EN(1'b1),
+    .I_ARVALID(WEIGHTS_DDR_ARVALID),
+    .I_ARREADY(WEIGHTS_DDR_ARREADY),
+    .I_ARADDR(WEIGHTS_DDR_ARADDR),
+//    .I_ARID(WEIGHTS_DDR_ARID),
+    .I_ARID(1'b0),
+    .I_ARLEN(WEIGHTS_DDR_ARLEN),
+    //.I_ARSIZE(WEIGHTS_DDR_ARSIZE),
+    .I_ARSIZE(3'b0),
+    //.I_ARLOCK(WEIGHTS_DDR_ARLOCK),
+    .I_ARLOCK(2'b0),
+    //.I_ARCACHE(WEIGHTS_DDR_ARCACHE),
+    .I_ARCACHE(4'b0),
+    //.I_ARQOS(WEIGHTS_DDR_ARQOS),
+    .I_ARQOS(4'b0),
+    //.I_ARPROT(WEIGHTS_DDR_ARPROT),
+    .I_ARPROT(3'b0),
+    //.I_ARUSER(WEIGHTS_DDR_ARUSER),
+    .I_ARUSER(1'b0),
+    //.I_ARBURST(WEIGHTS_DDR_ARBURST),
+    .I_ARBURST(2'b0),
+    //.I_ARREGION(WEIGHTS_DDR_ARREGION),
+    .I_ARREGION(4'b0),
+    .I_RVALID(WEIGHTS_DDR_RVALID),
+    .I_RREADY(WEIGHTS_DDR_RREADY),
+    .I_RDATA(WEIGHTS_DDR_RDATA),
+    .I_RID(WEIGHTS_DDR_RID),
+    .I_RUSER(WEIGHTS_DDR_RUSER),
+    .I_RRESP(WEIGHTS_DDR_RRESP),
+    .I_RLAST(WEIGHTS_DDR_RLAST),
+    .I_AWVALID(1'b0),
+    .I_AWREADY(WEIGHTS_DDR_AWREADY),
+    .I_AWADDR(32'd0),
+    .I_AWID(1'd0),
+    .I_AWLEN(32'd0),
+    .I_AWSIZE(3'd0),
+    .I_AWLOCK(2'd0),
+    .I_AWCACHE(4'd0),
+    .I_AWQOS(4'd0),
+    .I_AWPROT(3'd0),
+    .I_AWUSER(1'd0),
+    .I_AWBURST(2'd0),
+    .I_AWREGION(4'd0),
+    .I_WVALID(1'b0),
+    .I_WREADY(WEIGHTS_DDR_WREADY),
+    .I_WDATA(128'd0),
+    .I_WID(1'd0),
+    .I_WUSER(1'd0),
+    .I_WLAST(1'b0),
+    .I_WSTRB(16'd0),
+    .I_BVALID(WEIGHTS_DDR_BVALID),
+    .I_BREADY(1'b0),
+    .I_BRESP(WEIGHTS_DDR_BRESP),
+    .I_BID(WEIGHTS_DDR_BID),
+    .I_BUSER(WEIGHTS_DDR_BUSER)
+);
 
  cnna_FIN_DDR_m_axi #(
      .CONSERVATIVE( 0 ),
@@ -1139,29 +1150,29 @@ cnna_axilite_s_axi_U(
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 main_process #(
-    .C_MEM_STYLE         ( "block"                  ),
-    .C_POWER_OF_1ADOTS   ( 4                        ),
-    .C_POWER_OF_PECI     ( 4                        ),
-    .C_POWER_OF_PECO     ( 5                        ),
-    .C_POWER_OF_PEPIX    ( 3                        ),
-    .C_POWER_OF_PECODIV  ( 1                        ),
-    .C_POWER_OF_RDBPIX   ( 1                        ), 
-    .C_DATA_WIDTH        ( 8                        ), 
-    .C_QIBUF_WIDTH       ( 12                       ), 
-    .C_QOBUF_WIDTH       ( 24                       ), 
-    .C_CNV_K_WIDTH       ( 5                        ),
-    .C_CNV_CH_WIDTH      ( 13                       ),
-    .C_DIM_WIDTH         ( 16                       ),
-    .C_M_AXI_LEN_WIDTH   ( 32                       ),
-    .C_M_AXI_ADDR_WIDTH  ( 32                       ),
-    .C_M_AXI_DATA_WIDTH  ( 128                      ),
-    .C_RAM_ADDR_WIDTH    ( 9                        ),
-    .C_RAM_DATA_WIDTH    ( 128                      ))
+    .C_MEM_STYLE         ( "block"                      ),
+    .C_POWER_OF_1ADOTS   ( 4                            ),
+    .C_POWER_OF_PECI     ( 4                            ),
+    .C_POWER_OF_PECO     ( 5                            ),
+    .C_POWER_OF_PEPIX    ( 3                            ),
+    .C_POWER_OF_PECODIV  ( 1                            ),
+    .C_POWER_OF_RDBPIX   ( 1                            ), 
+    .C_DATA_WIDTH        ( 8                            ), 
+    .C_QIBUF_WIDTH       ( 12                           ), 
+    .C_QOBUF_WIDTH       ( 24                           ), 
+    .C_CNV_K_WIDTH       ( 5                            ),
+    .C_CNV_CH_WIDTH      ( 13                           ),
+    .C_DIM_WIDTH         ( 16                           ),
+    .C_M_AXI_LEN_WIDTH   ( 32                           ),
+    .C_M_AXI_ADDR_WIDTH  ( 32                           ),
+    .C_M_AXI_DATA_WIDTH  ( 128                          ),
+    .C_RAM_ADDR_WIDTH    ( 9                            ),
+    .C_RAM_DATA_WIDTH    ( 128                          ))
 u_main_process(
     .I_clk               (ap_clk                        ),
     .I_rst               (ap_rst_n_inv                  ),
-    .I_ap_start          (ap_start                      ),
-    .O_ap_done           (ap_done                       ),
+    .I_ap_start          (S_map_start                   ),
+    .O_ap_done           (S_map_done                    ),
     .I_base_addr         (fiddr_V                       ),
     .I_cnv_en            (layer_enPara_cnvEn            ),
     .I_pool_en           (layer_enPara_poolEn           ),
@@ -1198,40 +1209,75 @@ u_main_process(
     .O_fomaxi_bready     (S_fomaxi_bready               )
 );
 
-// load_all_weights #(
-//     .MEM_STYLE          ( "block"   ),
-//     .C_POWER_OF_1ADOTS  ( 4         ),
-//     .C_POWER_OF_PECI    ( 4         ),
-//     .C_POWER_OF_PECO    ( 5         ),
-//     .C_POWER_OF_PECODIV ( 1         ),
-//     .C_CNV_K_WIDTH      ( 5         ),
-//     .C_CNV_CH_WIDTH     ( 8         ),
-//     .C_M_AXI_LEN_WIDTH  ( 32        ), 
-//     .C_M_AXI_ADDR_WIDTH ( 32        ),
-//     .C_M_AXI_DATA_WIDTH ( 128       ),
-//     .C_RAM_ADDR_WIDTH   ( 9         ),
-//     .C_RAM_DATA_WIDTH   ( 128       ))
-// u0_load_all_weights(
-//     .I_clk           (ap_clk                            ),
-//     .I_rst           (ap_rst_n_inv                      ),
-//     .I_ap_start      (ap_start                          ),
-//     .O_ap_done       (ap_done                           ),
-//     .I_next_kernel   (layer_cnvParaNext_kernel_h_V      ),
-//     .I_next_ci       (layer_iParaNext_ci_V              ),
-//     .I_next_co       (layer_oParaNext_co_V              ),
-//     .I_next_w_addr   (layer_wParaNext_memAddrWeights_V  ),
-//     .I_next_b_addr   (layer_wParaNext_memAddrBias_V     ),
-//     .I_base_addr     (wddr_V                            ),
-//     .O_maxi_arlen    (WEIGHTS_DDR_ARLEN                 ),
-//     .I_maxi_arready  (WEIGHTS_DDR_ARREADY               ),   
-//     .O_maxi_arvalid  (WEIGHTS_DDR_ARVALID               ),
-//     .O_maxi_araddr   (WEIGHTS_DDR_ARADDR                ),
-//     .O_maxi_rready   (WEIGHTS_DDR_RREADY                ),
-//     .I_maxi_rvalid   (WEIGHTS_DDR_RVALID                ),
-//     .I_maxi_rdata    (WEIGHTS_DDR_RDATA                 )
-// );
+load_all_weights #(
+    .MEM_STYLE          ( "block"           ),
+    .C_POWER_OF_1ADOTS  ( 4                 ),
+    .C_POWER_OF_PECI    ( 4                 ),
+    .C_POWER_OF_PECO    ( 5                 ),
+    .C_POWER_OF_PECODIV ( 1                 ),
+    .C_CNV_K_WIDTH      ( 5                 ),
+    .C_CNV_CH_WIDTH     ( 13                ),
+    .C_M_AXI_LEN_WIDTH  ( 32                ), 
+    .C_M_AXI_ADDR_WIDTH ( 32                ),
+    .C_M_AXI_DATA_WIDTH ( 128               ),
+    .C_COEF_DATA        (C_COEF_DATA        ),
+    .C_BIAS_DATA        (C_BIAS_DATA        ),
+    .C_RAM_ADDR_WIDTH   (C_RAM_ADDR_WIDTH   ),
+    .C_RAM_DATA_WIDTH   (C_RAM_DATA_WIDTH   ))
+u0_load_all_weights(
+    .I_clk           (ap_clk                            ),
+    .I_rst           (ap_rst_n_inv                      ),
+    .I_ap_start      (S_wap_start                       ),
+    .O_ap_done       (S_wap_done                        ),
+    .I_next_kernel   (layer_cnvParaNext_kernel_h_V      ),
+    .I_next_ci       (layer_iParaNext_ci_V              ),
+    .I_next_co       (layer_oParaNext_co_V              ),
+    .I_next_w_addr   (layer_wParaNext_memAddrWeights_V  ),
+    .I_next_b_addr   (layer_wParaNext_memAddrBias_V     ),
+    .I_base_addr     (wddr_V                            ),
+    .I_craddr        (S_craddr                          ),        
+    .O_crdata        (S_crdata                          ),
+    .I_braddr        (S_braddr                          ),        
+    .O_brdata        (S_brdata                          ),
+    .O_maxi_arlen    (WEIGHTS_DDR_ARLEN                 ),
+    .I_maxi_arready  (WEIGHTS_DDR_ARREADY               ),   
+    .O_maxi_arvalid  (WEIGHTS_DDR_ARVALID               ),
+    .O_maxi_araddr   (WEIGHTS_DDR_ARADDR                ),
+    .O_maxi_rready   (WEIGHTS_DDR_RREADY                ),
+    .I_maxi_rvalid   (WEIGHTS_DDR_RVALID                ),
+    .I_maxi_rdata    (WEIGHTS_DDR_RDATA                 )
+);
 
+// ap bus
+always @(posedge ap_clk)begin
+    if(ap_start)begin
+        if(ap_start && (~ap_start_1d))begin
+            S_ap_cnt <= 2'b01       ;
+        end
+        else if(S_wap_done)begin
+            S_ap_cnt <= 2'b10       ;
+        end
+        else if(S_map_done)begin
+            S_ap_cnt <= 2'b00       ;
+        end
+        else begin
+            S_ap_cnt <= S_ap_cnt    ;
+        end
+    end
+    else begin
+            S_ap_cnt <= 2'b00       ; 
+    end
+end
 
+always @(posedge ap_clk)begin
+    ap_start_1d <= ap_start     ;
+    S_wap_start <= S_ap_cnt[0]  ;
+    S_map_start <= S_ap_cnt[1]  ;
+end
+
+always @(posedge ap_clk)begin
+    ap_done <= S_map_done;
+end
 
 always @(posedge ap_clk)begin
     ap_rst_n_inv <= ~ap_rst_n;
@@ -1240,5 +1286,4 @@ end
 assign ap_ready = ap_done;
 
 endmodule //cnna
-
 
