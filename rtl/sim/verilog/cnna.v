@@ -1166,6 +1166,8 @@ main_process #(
     .C_M_AXI_LEN_WIDTH   ( 32                           ),
     .C_M_AXI_ADDR_WIDTH  ( 32                           ),
     .C_M_AXI_DATA_WIDTH  ( 128                          ),
+    .C_COEF_DATA         (C_COEF_DATA                   ),
+    .C_BIAS_DATA         (C_BIAS_DATA                   ),
     .C_RAM_ADDR_WIDTH    ( 9                            ),
     .C_RAM_DATA_WIDTH    ( 128                          ))
 u_main_process(
@@ -1191,6 +1193,10 @@ u_main_process(
     .I_ipara_ci          (layer_iPara_ciAlign_V         ),
     .I_ipara_width       (layer_iPara_width             ),
     .I_ipara_height      (layer_iPara_height            ),
+    .O_craddr            (S_craddr                      ),        
+    .I_crdata            (S_crdata                      ),
+    .O_braddr            (S_braddr                      ),        
+    .I_brdata            (S_brdata                      ),
     .O_fimaxi_arlen      (S_fimaxi_arlen                ),
     .I_fimaxi_arready    (S_fimaxi_arready              ),   
     .O_fimaxi_arvalid    (S_fimaxi_arvalid              ),

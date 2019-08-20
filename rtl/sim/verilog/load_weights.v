@@ -58,8 +58,8 @@ input       [    C_CNV_CH_WIDTH-1:0]I_next_co       ,
 input       [C_M_AXI_ADDR_WIDTH-1:0]I_next_mem_addr ,
 input       [C_M_AXI_ADDR_WIDTH-1:0]I_base_addr     ,
 // inter mem bus 
-input       [  C_RAM_ADDR_WIDTH-1:0]I_craddr        ,        
-output      [       C_COEF_DATA-1:0]O_crdata        ,
+input       [  C_RAM_ADDR_WIDTH-1:0]I_craddr        ,//dly=3,base process_element        
+output reg  [       C_COEF_DATA-1:0]O_crdata        ,//dly=6
 // master read address channel
 output reg  [C_M_AXI_LEN_WIDTH-1 :0]O_maxi_arlen    ,
 input                               I_maxi_arready  ,   
@@ -153,6 +153,7 @@ reg                          S_ap_done                      ;
 reg                          S_ap_done_1d                   ;
 wire S_wren[C_PECI_NUM-1:0][0:C_PECODIV_NUM-1]              ;
 wire [C_M_AXI_LEN_WIDTH-1 :0]S_maxi_arlen                   ; 
+wire [       C_COEF_DATA-1:0]S_crdata                       ;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Calculate blk id addr
@@ -352,27 +353,31 @@ genvar ci_idx;
 genvar co_idx;
 
 generate
-    for(ci_idx=0;ci_idx<C_PECI_NUM;ci_idx=ci_idx+1'b1)
-    begin:wbuf_ci_ctrl
-        for(co_idx=0;co_idx<C_PECODIV_NUM;co_idx=co_idx+1'b1)
-        begin:wbuf_co_ctrl
-            assign S_wren[ci_idx][co_idx] =  (co_idx == S_nd_cnt_cog[0]) && (ci_idx == S_nd_cnt_ci );       
-            spram #(
-                .MEM_STYLE  ("block"                 ),//"distributed"
-                .ASIZE      (C_RAM_ADDR_WIDTH        ),
-                .DSIZE      (C_RAM_DATA_WIDTH        ))
-            u_wbuf(
-                .I_clk  (I_clk                                                  ),
-                .I_addr	(S_blk_id                                               ),
-                .I_data	(S_nd_maxi_rdata                                        ),
-                .I_wr	(S_nd_co_valid && S_wren[ci_idx][co_idx]                ),
-                .O_data	(O_crdata[
-                            (co_idx+ci_idx*C_PECODIV_NUM+1)*C_RAM_DATA_WIDTH-1:
-                            (co_idx+ci_idx*C_PECODIV_NUM)*C_RAM_DATA_WIDTH]     )
-            );
+    begin:wbuf
+        for(ci_idx=0;ci_idx<C_PECI_NUM;ci_idx=ci_idx+1'b1)begin:wbuf_ci_ctrl
+            for(co_idx=0;co_idx<C_PECODIV_NUM;co_idx=co_idx+1'b1)begin:wbuf_co_ctrl
+                assign S_wren[ci_idx][co_idx] =  (co_idx == S_nd_cnt_cog[0]) && (ci_idx == S_nd_cnt_ci );       
+                spram #(
+                    .MEM_STYLE  ("block"                 ),//"distributed"
+                    .ASIZE      (C_RAM_ADDR_WIDTH        ),
+                    .DSIZE      (C_RAM_DATA_WIDTH        ))
+                u_wbuf(
+                    .I_clk  (I_clk                                                  ),
+                    .I_addr	(S_blk_id                                               ),
+                    .I_data	(S_nd_maxi_rdata                                        ),
+                    .I_wr	(S_nd_co_valid && S_wren[ci_idx][co_idx]                ),
+                    .O_data	(S_crdata[
+                                (co_idx+ci_idx*C_PECODIV_NUM+1)*C_RAM_DATA_WIDTH-1:
+                                (co_idx+ci_idx*C_PECODIV_NUM)*C_RAM_DATA_WIDTH]     )
+                );
+            end
         end
     end
 endgenerate
+
+always @(posedge I_clk)begin
+    O_crdata <= S_crdata  ;
+end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // ap_done 

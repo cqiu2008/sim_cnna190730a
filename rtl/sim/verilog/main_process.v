@@ -47,6 +47,8 @@ parameter
     C_M_AXI_LEN_WIDTH       = 32        ,
     C_M_AXI_ADDR_WIDTH      = 32        ,
     C_M_AXI_DATA_WIDTH      = 128       ,
+    C_COEF_DATA             = 8*16*32   , 
+    C_BIAS_DATA             = 32        , 
     C_RAM_ADDR_WIDTH        = 9         ,
     C_RAM_DATA_WIDTH        = 128       
 )(
@@ -73,6 +75,11 @@ input       [    C_CNV_CH_WIDTH-1:0]I_opara_co          ,
 input       [    C_CNV_CH_WIDTH-1:0]I_ipara_ci          ,
 input       [       C_DIM_WIDTH-1:0]I_ipara_width       ,
 input       [       C_DIM_WIDTH-1:0]I_ipara_height      ,
+// inter mem bus 
+output      [  C_RAM_ADDR_WIDTH-1:0]O_craddr            ,        
+input       [       C_COEF_DATA-1:0]I_crdata            ,
+output      [  C_RAM_ADDR_WIDTH-1:0]O_braddr            ,        
+input       [  C_RAM_DATA_WIDTH-1:0]I_brdata            ,
 // fi master channel
 output      [C_M_AXI_LEN_WIDTH-1 :0]O_fimaxi_arlen      ,
 input                               I_fimaxi_arready    ,   
@@ -133,10 +140,10 @@ wire         [C_RAM_ADDR_WIDTH-1  :0]S_ibuf0_addr                   ;
 wire         [C_RAM_ADDR_WIDTH-1  :0]S_ibuf1_addr                   ; 
 wire         [C_RAM_DATA_WIDTH-1  :0]S_ibuf0_rdata                  ; 
 wire         [C_RAM_DATA_WIDTH-1  :0]S_ibuf1_rdata                  ; 
-wire         [C_RAM_ADDR_WIDTH-1  :0]S_sbuf0_raddr                  ; 
-wire         [C_RAM_ADDR_WIDTH-1  :0]S_sbuf1_raddr                  ; 
-wire         [C_RAM_LDATA_WIDTH-1 :0]S_sbuf0_rdata                  ; 
-wire         [C_RAM_LDATA_WIDTH-1 :0]S_sbuf1_rdata                  ; 
+wire         [C_RAM_ADDR_WIDTH-1  :0]S_sraddr0                      ; 
+wire         [C_RAM_ADDR_WIDTH-1  :0]S_sraddr1                      ; 
+wire         [C_RAM_LDATA_WIDTH-1 :0]S_srdata0                      ; 
+wire         [C_RAM_LDATA_WIDTH-1 :0]S_srdata1                      ; 
 reg                                  S_mainpost_en                  ;
 reg                                  S_mainpost_cnt_en              ;
 reg                                  S_mainpost_cnt_en_1d           ;
@@ -226,6 +233,8 @@ main_cnt_ctrl #(
     .C_DIM_WIDTH        (C_DIM_WIDTH        ))
 u0_main_cnt_ctrl (
     .I_clk              (I_clk              ),
+    .I_cnv_en           (I_cnv_en           ),
+    .I_pool_en          (I_pool_en          ),
     .I_hcnt_total       (S_hcnt_total       ),
     .O_hcnt_pre         (S_hcnt_pre         ),
     .O_hcnt             (S_hcnt             ),
@@ -359,10 +368,10 @@ u_multi_slide_windows_flatten(
     .O_ibuf1_addr        (S_ibuf1_addr          ), 
     .I_ibuf0_rdata       (S_ibuf0_rdata         ), 
     .I_ibuf1_rdata       (S_ibuf1_rdata         ), 
-    .I_sraddr0           (S_sbuf0_raddr         ), 
-    .I_sraddr1           (S_sbuf1_raddr         ), 
-    .O_srdata0           (S_sbuf0_rdata         ), 
-    .O_srdata1           (S_sbuf1_rdata         ), 
+    .I_sraddr0           (S_sraddr0             ), 
+    .I_sraddr1           (S_sraddr1             ), 
+    .O_srdata0           (S_srdata0             ), 
+    .O_srdata1           (S_srdata1             ), 
     .I_qraddr0           (S_qraddr0             ), 
     .I_qraddr1           (S_qraddr1             ), 
     .O_qrdata0           (S_qrdata0             ), 
@@ -375,6 +384,56 @@ u_multi_slide_windows_flatten(
     .I_pad_w             (I_pad_w               ),
     .I_ipara_width       (I_ipara_width         ),
     .I_ipara_ci          (I_ipara_ci            ) 
+);
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// process_element 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+process_element #(
+    .C_MEM_STYLE            (C_MEM_STYLE            ),
+    .C_POWER_OF_1ADOTS      (C_POWER_OF_1ADOTS      ),
+    .C_POWER_OF_PECI        (C_POWER_OF_PECI        ),
+    .C_POWER_OF_PECO        (C_POWER_OF_PECO        ),
+    .C_POWER_OF_PEPIX       (C_POWER_OF_PEPIX       ),
+    .C_POWER_OF_PECODIV     (C_POWER_OF_PECODIV     ),
+    .C_POWER_OF_RDBPIX      (C_POWER_OF_RDBPIX      ), 
+    .C_PEPIX                (C_PEPIX                ),
+    .C_DATA_WIDTH           (C_DATA_WIDTH           ),
+    .C_QIBUF_WIDTH          (C_QIBUF_WIDTH          ),
+    .C_QOBUF_WIDTH          (C_QOBUF_WIDTH          ),
+    .C_LQIBUF_WIDTH         (C_LQIBUF_WIDTH         ),       
+    .C_CNV_K_WIDTH          (C_CNV_K_WIDTH          ),
+    .C_CNV_CH_WIDTH         (C_CNV_CH_WIDTH         ),
+    .C_DIM_WIDTH            (C_DIM_WIDTH            ),
+    .C_M_AXI_LEN_WIDTH      (C_M_AXI_LEN_WIDTH      ),
+    .C_M_AXI_ADDR_WIDTH     (C_M_AXI_ADDR_WIDTH     ),
+    .C_M_AXI_DATA_WIDTH     (C_M_AXI_DATA_WIDTH     ),
+    .C_COEF_DATA            (C_COEF_DATA            ), 
+    .C_RAM_ADDR_WIDTH       (C_RAM_ADDR_WIDTH       ),
+    .C_RAM_DATA_WIDTH       (C_RAM_DATA_WIDTH       ), 
+    .C_RAM_LDATA_WIDTH      (C_RAM_LDATA_WIDTH      ))
+u_process_element(
+    .I_clk                  (I_clk                  ),
+    .I_rst                  (I_rst                  ),
+    .I_allap_start          (I_ap_start             ),
+    .I_ap_start             (S_peap_start           ),
+    .O_ap_done              (S_peap_done            ),
+    .O_sraddr0              (S_sraddr0              ),//dly=2
+    .O_sraddr1              (S_sraddr1              ), 
+    .I_srdata0              (S_srdata0              ),//dly=5 
+    .I_srdata1              (S_srdata1              ), 
+    .O_craddr               (O_craddr               ),//dly=3       
+    .I_crdata               (I_crdata               ),//dly=6
+    .I_hindex               (S_hindex[2]            ),
+    .I_kh                   (S_kh[2]                ),
+    .I_kernel_h             (I_kernel_h             ),
+    .I_kernel_w             (I_kernel_w             ),
+    .I_hcnt_odd             (S_hcnt[0]              ),
+    .I_enwr_obuf0           (S_enwr_obuf0           ),
+    .I_ipara_height         (I_ipara_height         ),
+    .I_opara_width          (I_opara_width          ),
+    .I_opara_co             (I_opara_co             ),
+    .I_ipara_ci             (I_ipara_ci             ) 
 );
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -412,10 +471,10 @@ u_multi_slide_windows_flatten(
 //     .I_allap_start      (I_ap_start          ),
 //     .I_ap_start         (S_mpap_start        ),
 //     .O_ap_done          (S_mpap_done         ),
-//     .O_sraddr0          (S_sbuf0_raddr       ),//dly=0 
-//     .O_sraddr1          (S_sbuf1_raddr       ), 
-//     .I_srdata0          (S_sbuf0_rdata       ),//dly=3
-//     .I_srdata1          (S_sbuf1_rdata       ),//128*8
+//     .O_sraddr0          (S_sraddr0           ),//dly=0 
+//     .O_sraddr1          (S_sraddr1           ), 
+//     .I_srdata0          (S_srdata0           ),//dly=3
+//     .I_srdata1          (S_srdata1           ),//128*8
 //     .I_opara_height     (I_opara_height      ),
 //     .I_opara_width      (I_opara_width       ),
 //     .I_opara_co         (I_opara_co          ),
