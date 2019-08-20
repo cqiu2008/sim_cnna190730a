@@ -324,9 +324,9 @@ always @(posedge I_clk)begin
 end
 
 // calculate buf_en
-assign SR_sbuf0_en  = ~I_hcnt_odd   ; 
-assign SR_obuf0_en  = I_enwr_obuf0  ;
-assign SR_obuf1_en  = ~I_enwr_obuf0 ;
+assign SR_qibuf0_en  = ~I_hcnt_odd   ; 
+assign SR_qobuf0_en  = I_enwr_obuf0  ;
+assign SR_qobuf1_en  = ~I_enwr_obuf0 ;
 
 // output      [C_RAM_ADDR_WIDTH-1  :0]O_qraddr0           ,//dly=3
 // output      [C_RAM_ADDR_WIDTH-1  :0]O_qraddr1           , 

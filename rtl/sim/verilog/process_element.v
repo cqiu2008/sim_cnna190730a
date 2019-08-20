@@ -281,14 +281,14 @@ end
 always @(posedge I_clk)begin
     if(SC_cig_valid)begin
         if(SC_kw_valid)begin
-            SC_k_cnt <= SC_k_cnt + {{(C_FILTER_WIDTH-1){1'b0}},1'b1}  ;
+            SC_k_cnt <= SC_k_cnt + {{(C_FILTER_WIDTH-1){1'b0}},1'b1}    ;
         end
         else begin
-            SC_k_cnt <= SC_k_cnt                                    ; 
+            SC_k_cnt <= SC_k_cnt                                        ; 
         end
     end
     else begin
-            SC_k_cnt <= SR_kh_kernel_w                              ; 
+            SC_k_cnt <= SR_kh_kernel_w                                  ; 
     end
 end
 
@@ -392,7 +392,6 @@ always @(posedge I_clk)begin
     //O_ap_done           <= SR_ndpqap_done ||((~SR_ndap_start_1d) && SR_ndap_start && (~SR_hindex_suite))  ;
     O_ap_done           <= ((~SR_ndap_start_1d) && SR_ndap_start && (~SR_hindex_suite))  ;
 end
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // loop cnt ctrl 
