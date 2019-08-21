@@ -31,11 +31,14 @@
 //END_HEADER----------------------------------------------------------------------------------------
 module macc2d_uint8 #(
 parameter 
-    C_PEPIX                 = 8         ,
-    C_DATA_WIDTH            = 8         ,
-    C_PIX_WIDTH             = 8*16      ,
-    C_COE_WIDTH             = 8*16      ,
-    C_RES_WIDTH             = 32        
+    C_PEPIX         = 8                                 ,
+    C_PECI          = 16                                ,
+    C_HALF_PECO     = 16                                ,
+    C_DATA_WIDTH    = 8                                 ,
+    C_RESULT        = 20                                , 
+    C_PIX_WIDTH     = C_PECI*C_DATA_WIDTH               , 
+    C_COE_WIDTH     = C_PECI*C_DATA_WIDTH               , 
+    C_RES_WIDTH     = C_RESULT      
 )(
 // clk
 input                               I_clk               ,
@@ -50,6 +53,36 @@ parameter    C_MULTIPLIERA     = 30                             ;
 parameter    C_MULTIPLIERB     = 18                             ; 
 parameter    C_PRODUCTC       = C_MULTIPLIERA + C_MULTIPLIERB   ;
 
+wire [      C_DATA_WIDTH-1:0]S_pix[0:C_PECI-1]          ;
+wire [      C_DATA_WIDTH-1:0]S_coeh[0:C_PECI-1]         ;
+wire [      C_DATA_WIDTH-1:0]S_coel[0:C_PECI-1]         ;
+wire [     C_MULTIPLIERA-1:0]S_coe[0:C_PECI-1]          ;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Assign
+////////////////////////////////////////////////////////////////////////////////////////////////////
+genvar aci_idx;
+generate
+    begin:a1
+        for(aci_idx=0;aci_idx<C_PECI;aci_idx=aci_idx+1)begin:ci
+            assign S_pix[aci_idx]  = I_pix[aci_idx*C_DATA_WIDTH+:C_DATA_WIDTH]  ;
+            assign S_coeh[aci_idx] = I_coeh[aci_idx*C_DATA_WIDTH+:C_DATA_WIDTH] ;
+            assign S_coel[aci_idx] = I_coel[aci_idx*C_DATA_WIDTH+:C_DATA_WIDTH] ;
+                                    //b26, b25-b18        ,b17-b8,b7-b0
+            assign S_coe[aci_idx]  = {1'b0,S_coeh[aci_idx],10'b0,S_coel[aci_idx]};
+        end
+    end
+endgenerate
+
+//I_pix  = PEPIX * PECI * DATA_WIDTH 
+//         8     * 16   * 8 
+
+//I_coeh = PEPIX * PECI * DATA_WIDTH 
+//         8     * 16   * 8 
+
+
+reg  [      C_DATA_WIDTH-1:0]SC_warray[0:C_PECO-1][0:C_PECI-1]              ;
+wire [      C_DATA_WIDTH-1:0]SC_warray[0:C_PECO-1][0:C_PECI-1]              ;
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                
 //    __    __    __    __    __    __    __    __    __    __    __    __    __    __    __    __
@@ -68,6 +101,31 @@ parameter    C_PRODUCTC       = C_MULTIPLIERA + C_MULTIPLIERB   ;
 // (3) SC_+"xx"  name type (S_clock_xxx), means variable changed every clock 
 //        such as SC_id , ... and so on 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+input       [       C_PIX_WIDTH-1:0]I_pix               ,//
+input       [       C_COE_WIDTH-1:0]I_coeh              ,//
+input       [       C_COE_WIDTH-1:0]I_coel              ,//
+
+always @(posedge I_clk)begin
+
+end
+
+
+genvar  p_idx;
+genvar co_idx;
+genvar ci_idx;
+
+generate
+    begin:macc2d
+        for(p_idx=0;p_idx<C_PEPIX;p_idx=p_idx+1):pix
+            for(co_idx=0;co_idx<C_HALF_PECO;co_idx=co_idx+1):co
+                for(ci_idx=0;ci_idx<C_PECI;ci_idx=ci_idx+1):ci
+                    
+                end
+            end
+        end
+    end
+endgenerate
 
 dsp_unit #(
     .C_MULTIPLIERA  (C_MULTIPLIERA  ),
