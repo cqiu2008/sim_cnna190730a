@@ -8,7 +8,7 @@
 // \   \   \/      Version     : 2018.3
 //  \   \          Description : Xilinx Unified Simulation Library Component
 //  /   /                        48-bit Multi-Functional Arithmetic Block
-// /___/   /\      Filename    : DSP48E2.v
+// /___/   /\      Filename    : UDSP48E2.v
 // \   \  /  \
 //  \___\/\___\
 //
@@ -39,7 +39,7 @@
 
 `celldefine
 
-module DSP48E2 #(
+module UDSP48E2 #(
 `ifdef XIL_TIMING
   parameter LOC = "UNPLACED",
 `endif
@@ -1606,7 +1606,7 @@ end
 always @(*) begin
   if (USE_MULT_BIN == USE_MULT_NONE) mult = 45'b0;
   //else mult = ({{18{a_mult_mux[26]}},a_mult_mux} * {{27{b_mult_mux[17]}},b_mult_mux});
-  else mult = ({{18{1'b0}},a_mult_mux} * {{27{1'b0},b_mult_mux});
+  else mult = ({{18{1'b0}},a_mult_mux} * {{27{1'b0}},b_mult_mux});
 end
 
 // DSP_M_DATA

@@ -44,11 +44,16 @@ output      [       C_OUT_WIDTH-1:0]O_dout
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 generate
-    if(C_IN_WIDTH < C_OUT_WIDTH)begin:less
-        assign O_dout = {{(C_OUT_WIDTH-C_IN_WIDTH){1'b0}},I_din};
-    end
-    else begin:more
-        assign O_dout = I_din[C_OUT_WIDTH-1:0]; 
+    begin:align
+        if(C_IN_WIDTH < C_OUT_WIDTH)begin:less
+            assign O_dout = {{(C_OUT_WIDTH-C_IN_WIDTH){1'b0}},I_din};
+        end
+        else begin:more
+            assign O_dout = I_din[C_OUT_WIDTH-1:0]; 
+            //$display("Error : you will lose the valid data");
+            //$display("C_OUT_WIDTH is %d",C_OUT_WIDTH);
+            //$display("C_IN_WIDTH is %d",C_IN_WIDTH);
+        end
     end
 endgenerate
 

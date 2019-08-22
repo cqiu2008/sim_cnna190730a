@@ -31,24 +31,73 @@
 //END_HEADER----------------------------------------------------------------------------------------
 module dsp_unit #(
 parameter 
-    C_MULTIPLIERA            = 30        ,
-    C_MULTIPLIERB            = 18        ,
-    C_PRODUCTC              = 48         
+    C_IN0                    = 30        ,
+    C_IN1                    = 18        ,
+    C_IN2                    = 48        ,
+    C_OUT                    = 48        
 )(
 input                               I_clk               ,
-input       [     C_MULTIPLIERA-1:0]I_weight            ,//
-input       [     C_MULTIPLIERB-1:0]I_pixel             ,//
-output      [        C_PRODUCTC-1:0]O_product           ,//
-input       [        C_PRODUCTC-1:0]I_product_cas       ,//
-output      [        C_PRODUCTC-1:0]O_product_cas        //
+input       [             C_IN0-1:0]I_weight            ,//
+input       [             C_IN1-1:0]I_pixel             ,//
+input       [             C_IN2-1:0]I_product_cas       ,//
+output      [             C_OUT-1:0]O_product_cas       ,//
+output      [             C_OUT-1:0]O_product            //
 );
 
-//localparam   C_WOT_DIV_PEPIX  = C_DIM_WIDTH - C_POWER_OF_PEPIX+1        ;
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// ap interface
-////////////////////////////////////////////////////////////////////////////////////////////////////
-//reg  [                   3:0]SR_ndap_start_shift                            ;
+parameter C_MULTIPLIERA            = 30        ;
+parameter C_MULTIPLIERB            = 18        ;
+parameter C_PRODUCTC               = 48        ;
 
+wire   [     C_MULTIPLIERA-1:0]S_weight            ;//
+wire   [     C_MULTIPLIERB-1:0]S_pixel             ;//
+wire   [        C_PRODUCTC-1:0]S_product           ;//
+wire   [        C_PRODUCTC-1:0]S_product_casi      ;//
+wire   [        C_PRODUCTC-1:0]S_product_caso      ;//
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// align 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//input
+align #(
+    .C_IN_WIDTH     (C_IN0          ), 
+    .C_OUT_WIDTH    (C_MULTIPLIERA  ))
+u_weight(
+    .I_din          (I_weight       ),
+    .O_dout         (S_weight       ) 
+);
+
+align #(
+    .C_IN_WIDTH     (C_IN1          ), 
+    .C_OUT_WIDTH    (C_MULTIPLIERB  ))
+u_pixel(
+    .I_din          (I_pixel        ),
+    .O_dout         (S_pixel        ) 
+);
+
+align #(
+    .C_IN_WIDTH     (C_IN2          ), 
+    .C_OUT_WIDTH    (C_PRODUCTC     ))
+u_product_casi(
+    .I_din          (I_product_cas  ),
+    .O_dout         (S_product_casi  ) 
+);
+
+//output 
+align #(
+    .C_IN_WIDTH     (C_PRODUCTC     ), 
+    .C_OUT_WIDTH    (C_OUT          ))
+u_product(
+    .I_din          (S_product      ),
+    .O_dout         (O_product      ) 
+);
+
+align #(
+    .C_IN_WIDTH     (C_PRODUCTC     ), 
+    .C_OUT_WIDTH    (C_OUT          ))
+u_product_caso(
+    .I_din          (S_product_caso ),
+    .O_dout         (O_product_cas  ) 
+);
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                
 //    __    __    __    __    __    __    __    __    __    __    __    __    __    __    __    __
@@ -57,7 +106,7 @@ output      [        C_PRODUCTC-1:0]O_product_cas        //
 //                                                                                                
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-UDSP48E2 #(
+DSP48E2 #(
    // Feature Control Attributes: Data Path Selection
    .AMULTSEL("A"),                    // Selects A input to multiplier (A, AD)
    .A_INPUT("DIRECT"),                // Selects A input source, "DIRECT" (A port) or "CASCADE" (ACIN port)
@@ -115,7 +164,7 @@ u_dsp48e2(
    .BCOUT(),                          // 18-bit output: B cascade
    .CARRYCASCOUT(),                   // 1-bit output: Cascade carry
    .MULTSIGNOUT(),                    // 1-bit output: Multiplier sign cascade
-   .PCOUT(O_product_cas),             // 48-bit output: Cascade output
+   .PCOUT(S_product_caso),             // 48-bit output: Cascade output
    // Control outputs: Control Inputs/Status Bits
    .OVERFLOW(),                       // 1-bit output: Overflow in add/acc
    .PATTERNBDETECT(),                 // 1-bit output: Pattern bar detect
@@ -123,14 +172,14 @@ u_dsp48e2(
    .UNDERFLOW(),                      // 1-bit output: Underflow in add/acc
    // Data outputs: Data Ports
    .CARRYOUT(),                       // 4-bit output: Carry
-   .P(O_product),                     // 48-bit output: Primary data
+   .P(S_product),                     // 48-bit output: Primary data
    .XOROUT(),                         // 8-bit output: XOR data
    // Cascade inputs: Cascade Ports
    .ACIN(30'd0),                      // 30-bit input: A cascade data
    .BCIN(18'd0),                      // 18-bit input: B cascade
    .CARRYCASCIN(1'b0),                // 1-bit input: Cascade carry
    .MULTSIGNIN(1'b0),                 // 1-bit input: Multiplier sign cascade
-   .PCIN(I_product_cas),              // 48-bit input: P cascade
+   .PCIN(S_product_casi),              // 48-bit input: P cascade
    // Control inputs: Control Inputs/Status Bits
    .ALUMODE(4'd0),                    // 4-bit input: ALU control
    .CARRYINSEL(3'd0),                 // 3-bit input: Carry select
@@ -140,8 +189,8 @@ u_dsp48e2(
    .OPMODE(9'b00_001_0101),           // 9-bit input: Operation mode
    //OPMODE{[8,7]=2'b0,[6,4]=3'b001,[3,2,1,0]=4'b0101}
    // Data inputs: Data Ports
-   .A(I_weight),                      // 30-bit input: A data
-   .B(I_pixel),                       // 18-bit input: B data
+   .A(S_weight),                      // 30-bit input: A data
+   .B(S_pixel),                       // 18-bit input: B data
    .C(48'd0),                         // 48-bit input: C data
    .CARRYIN(1'b0),                    // 1-bit input: Carry-in
    .D(27'd0),                         // 27-bit input: D data
@@ -154,7 +203,7 @@ u_dsp48e2(
    .CEB2(1'b0),                       // 1-bit input: Clock enable for 2nd stage BREG
    .CEC(1'b0),                        // 1-bit input: Clock enable for CREG
    .CECARRYIN(1'b0),                  // 1-bit input: Clock enable for CARRYINREG
-   .CECTRL(1'b0),                     // 1-bit input: Clock enable for OPMODEREG and CARRYINSELREG
+   .CECTRL(1'b1),                     // 1-bit input: Clock enable for OPMODEREG and CARRYINSELREG
    .CED(1'b1),                        // 1-bit input: Clock enable for DREG
    .CEINMODE(1'b1),                   // 1-bit input: Clock enable for INMODEREG
    .CEM(1'b1),                        // 1-bit input: Clock enable for MREG

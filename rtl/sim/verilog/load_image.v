@@ -128,7 +128,7 @@ u_suite_range(
 always @(posedge I_clk)begin
     S_ibuf0_index_neq   <= S_ibuf0_index != I_hindex                            ; 
     S_ibuf1_index_neq   <= S_ibuf1_index != I_hindex                            ; 
-    S_fi_base_addr_t    <= I_hindex * I_line_width_div16                        ; 
+    S_fi_base_addr_t    <= I_hindex * I_line_width_div16                        ;//bug 
     S_fi_base_addr      <= S_fi_base_addr_t + I_base_addr                       ;
     S_ap_start_shift    <= {S_ap_start_shift[C_AP_START-2:0],I_ap_start}        ;
 end
