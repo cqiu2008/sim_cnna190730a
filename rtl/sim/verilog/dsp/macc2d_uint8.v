@@ -38,15 +38,15 @@ parameter
     C_RESULT        = 20                                , 
     C_PIX_WIDTH     = C_PECI*C_DATA_WIDTH               , 
     C_COE_WIDTH     = C_PECI*C_DATA_WIDTH               , 
-    C_RES_WIDTH     = C_RESULT      
+    C_SUM_WIDTH     = C_RESULT      
 )(
 // clk
 input                               I_clk               ,
 input       [       C_PIX_WIDTH-1:0]I_pix               ,//
 input       [       C_COE_WIDTH-1:0]I_coeh              ,//
 input       [       C_COE_WIDTH-1:0]I_coel              ,//
-output      [       C_RES_WIDTH-1:0]O_resh              ,//
-output      [       C_RES_WIDTH-1:0]O_resl              
+output      [       C_SUM_WIDTH-1:0]O_resh              ,//
+output      [       C_SUM_WIDTH-1:0]O_resl              
 );
 
 parameter    C_MULTIPLIERA     = 30                             ; 
@@ -65,6 +65,7 @@ assign S_product_cas[0] = {C_PRODUCTC{1'b0}};
 
 assign O_resl = {2'b0,S_product[C_PECI-1][17:0]};
 assign O_resh = {S_product[C_PECI-1][37:18]}    ;
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Assign
@@ -133,6 +134,9 @@ generate
         end
     end
 endgenerate
+
+wire [        C_PRODUCTC-1:0]S_psim                             ;
+assign S_psim           = S_product[C_PECI-1]                   ;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                

@@ -328,12 +328,6 @@ assign SR_qibuf0_en  = ~I_hcnt_odd   ;
 assign SR_qobuf0_en  = I_enwr_obuf0  ;
 assign SR_qobuf1_en  = ~I_enwr_obuf0 ;
 
-// output      [C_RAM_ADDR_WIDTH-1  :0]O_qraddr0           ,//dly=3
-// output      [C_RAM_ADDR_WIDTH-1  :0]O_qraddr1           , 
-// input       [  C_LQIBUF_WIDTH-1  :0]I_qrdata0           ,//dly=6
-// input       [  C_LQIBUF_WIDTH-1  :0]I_qrdata1           , 
-
-
 dly #(
     .C_DATA_WIDTH   (1          ), 
     .C_DLY_NUM      (7          ))
@@ -362,7 +356,7 @@ generate
                 .C_ISIZE        (C_QIBUF_WIDTH    ),
                 .C_DSIZE        (C_QOBUF_WIDTH    ),
                 .C_ASIZE        (C_RAM_ADDR_WIDTH ))
-            u_addsumram(
+            u_aram(
                 .I_clk          (I_clk                                                  ),
                 .I_cnt_boundary (SL_kernel_ci_group                                     ),
                 .I_first_flag   (SC_first_flag                                          ),
