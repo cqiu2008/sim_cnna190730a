@@ -39,6 +39,7 @@ parameter
     C_ASIZE         = 10          
 )(
 input                               I_clk           ,
+input                               I_wram0_en      , 
 input       [             C_CNT-1:0]I_cnt_boundary  ,
 input                               I_first_flag    ,
 input                               I_din_valid     ,//dly=0
@@ -48,7 +49,7 @@ input       [C_ASIZE-1           :0]I_raddr         ,
 output      [C_DSIZE-1           :0]O_rdata             
 );
 
-wire                            S_first_flag;
+//wire                            S_first_flag;
 wire                            S_rdy_pre4  ;   
 wire    [C_DSIZE-1           :0]S_result    ;
 
@@ -65,7 +66,7 @@ u_pipeline_ac(
     .I_op_en            (I_dven             ),
     .I_op_rdy           (I_din_valid        ),
     .I_operand          (I_din              ),
-    .O_result_first_flag(S_first_flag       ),
+    //.O_result_first_flag(S_first_flag       ),
     .O_result_rdy_pre4  (S_rdy_pre4         ),
     .O_result           (S_result           )
 );
@@ -80,7 +81,8 @@ sum_ram#(
     .C_ASIZE      (C_ASIZE          ))
 u_sum_ram(
     .I_clk        (I_clk            ),
-    .I_first_flag (S_first_flag     ),
+    .I_wram0_en   (I_wram0_en       ), 
+    .I_first_flag (I_first_flag     ),
     .I_dv_pre4    (S_rdy_pre4       ),//dly=0
     .I_din        (S_result         ),
     .I_dven       (I_dven           ),

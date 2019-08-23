@@ -351,13 +351,14 @@ generate
     begin:ram
         for(idx=0;idx<C_PEPIX;idx=idx+1)begin:rn
             add_sum_ram #(
-                .C_MEM_STYLE    (C_MEM_STYLE      ),
-                .C_CNT          (C_CNV_K_GROUP    ),
-                .C_ISIZE        (C_QIBUF_WIDTH    ),
-                .C_DSIZE        (C_QOBUF_WIDTH    ),
-                .C_ASIZE        (C_RAM_ADDR_WIDTH ))
+                .C_MEM_STYLE    (C_MEM_STYLE                                            ),
+                .C_CNT          (C_CNV_K_GROUP                                          ),
+                .C_ISIZE        (C_QIBUF_WIDTH                                          ),
+                .C_DSIZE        (C_QOBUF_WIDTH                                          ),
+                .C_ASIZE        (C_RAM_ADDR_WIDTH                                       ))
             u_aram(
                 .I_clk          (I_clk                                                  ),
+                .I_wram0_en     (SR_qobuf0_en                                           ),
                 .I_cnt_boundary (SL_kernel_ci_group                                     ),
                 .I_first_flag   (SC_first_flag                                          ),
                 .I_din_valid    (SC_dv                                                  ),//dly=7

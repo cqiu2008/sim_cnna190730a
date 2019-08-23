@@ -39,6 +39,7 @@ parameter
 )(
 input                               I_clk           ,
 // ctrl bus
+input                               I_wram0_en      , 
 input                               I_first_flag    ,
 // mem bus
 input                               I_dv_pre4       ,//dly=0
@@ -48,26 +49,30 @@ input       [C_ASIZE-1           :0]I_raddr         ,
 output reg  [C_DSIZE-1           :0]O_rdata             
 );
 
-reg  [C_ASIZE-1           :0]S_waddr    ;
-reg  [C_DSIZE-1           :0]S_wdata    ;       
-wire                         S_wr       ;        
-reg  [C_ASIZE-1           :0]S_raddr    ;        
-reg  [C_ASIZE-1           :0]S_rcnt     ;        
-reg                          S_rd       ;        
-wire [C_DSIZE-1           :0]S_rdata    ;           
-reg  [C_DSIZE-1           :0]S_rdata_1d ;     
-wire [C_DSIZE-1           :0]S_sum_tmp  ;     
+reg  [C_ASIZE-1           :0]S_waddr        ;
+reg  [C_DSIZE-1           :0]S_wdata        ;       
+wire                         S_wr_pre       ;        
+reg                          S_wr0          ;        
+reg                          S_wr1          ;        
+reg  [C_ASIZE-1           :0]S_raddr        ;        
+reg  [C_ASIZE-1           :0]S_rcnt         ;        
+reg                          S_rd           ;        
+wire [C_DSIZE-1           :0]S_rdata0       ;           
+wire [C_DSIZE-1           :0]S_rdata1       ;           
+reg  [C_DSIZE-1           :0]S_sumdin_1d    ;     
+wire [C_DSIZE-1           :0]S_sum_tmp      ;     
 //wire [C_DSIZE-1           :0]S_sum      ;     
 //wire [C_DSIZE-1           :0]S_sum_1d   ;     
-wire [C_DSIZE-1           :0]S_sum_2d   ;     
+wire [C_DSIZE-1           :0]S_sum_2d       ;     
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // ram bus 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 always @(posedge I_clk)begin
-    S_raddr     <= I_dven   ? S_rcnt : I_raddr   ;//dly=2 
-    S_rdata_1d  <= S_rdata;//dly=4
+    S_raddr     <= I_dven     ? S_rcnt   : I_raddr  ;//dly=2 
+    S_sumdin_1d <= I_wram0_en ? S_rdata0 : S_rdata1 ;//dly=4
+    O_rdata     <= I_wram0_en ? S_rdata1 : S_rdata0 ;
 end
 
 always @(posedge I_clk)begin
@@ -88,23 +93,39 @@ sdpram #(
     .C_MEM_STYLE (C_MEM_STYLE   ),
     .C_DSIZE     (C_DSIZE       ),
     .C_ASIZE     (C_ASIZE       ))
-u_sdpram(
+u_sdpram0(
     .I_wclk      (I_clk         ),
     .I_waddr     (S_waddr       ),
     .I_wdata     (S_wdata       ),
     .I_ce        (1'b1          ),
-    .I_wr        (S_wr          ),
+    .I_wr        (S_wr0         ),
     .I_rclk      (I_clk         ),
     .I_raddr     (S_raddr       ),
     .I_rd        (1'b1          ),
-    .O_rdata     (S_rdata       )    
+    .O_rdata     (S_rdata0      )    
+);
+
+sdpram #(
+    .C_MEM_STYLE (C_MEM_STYLE   ),
+    .C_DSIZE     (C_DSIZE       ),
+    .C_ASIZE     (C_ASIZE       ))
+u_sdpram1(
+    .I_wclk      (I_clk         ),
+    .I_waddr     (S_waddr       ),
+    .I_wdata     (S_wdata       ),
+    .I_ce        (1'b1          ),
+    .I_wr        (S_wr1         ),
+    .I_rclk      (I_clk         ),
+    .I_raddr     (S_raddr       ),
+    .I_rd        (1'b1          ),
+    .O_rdata     (S_rdata1      )    
 );
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // add process 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-assign S_sum_tmp = I_first_flag ? {C_DSIZE{1'b0}} : S_rdata_1d  ;
+assign S_sum_tmp = I_first_flag ? {C_DSIZE{1'b0}} : S_sumdin_1d  ;
 //assign S_sum     = S_sum_tmp + I_din  ;
 
 adder_pp2 #(
@@ -123,20 +144,26 @@ always @(posedge I_clk)begin
     S_wdata  <= S_sum_2d    ;//dly=7
 end
 
-// S_wr
+// S_wr_pre
 dly #(
     .C_DATA_WIDTH   (1          ), 
-    .C_DLY_NUM      (7          ))
+    .C_DLY_NUM      (6          ))
 u_start_dly(
     .I_clk     (I_clk           ),
     .I_din     (I_dv_pre4       ),
-    .O_dout    (S_wr            )
+    .O_dout    (S_wr_pre        ) 
 );
+
+always @(posedge I_clk)begin
+    S_wr0 <= S_wr_pre && I_wram0_en     ;
+    S_wr1 <= S_wr_pre && (~I_wram0_en)  ;
+end
+
 
 // S_waddr
 always @(posedge I_clk)begin
     if(I_dven)begin
-        if(S_wr)begin
+        if(S_wr0 | S_wr1 )begin
             S_waddr <= S_waddr + {{(C_ASIZE-1){1'b0}},1'b1} ;
         end
         else begin

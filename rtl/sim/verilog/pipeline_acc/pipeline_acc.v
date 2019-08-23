@@ -41,7 +41,7 @@ input       [             C_CNT-1:0]I_cnt_boundary      ,
 input                               I_op_en             ,
 input                               I_op_rdy            ,//rdly=0
 input       [             C_IN1-1:0]I_operand           ,
-output reg                          O_result_first_flag ,
+//output reg                          O_result_first_flag ,
 output reg                          O_result_rdy_pre4   ,
 output reg  [             C_OUT-1:0]O_result        
 );
@@ -416,31 +416,46 @@ u_m3sum(
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 always @(posedge I_clk)begin
     if(SL_equal1)begin
-        O_result_first_flag <= S_c1sum_p4_valid ; 
+        //O_result_first_flag <= S_c1sum_p4_valid ; 
         O_result_rdy_pre4   <= S_c1sum_p4_valid ;
         O_result            <= S_c1sum          ; 
     end
     else if(SL_equal2)begin
-        O_result_first_flag <= S_sum_valid && (~S_sum_valid_lck); 
+        //O_result_first_flag <= S_sum_valid && (~S_sum_valid_lck); 
         O_result_rdy_pre4   <= S_c2sum_p4_valid ;
         O_result            <= S_c2sum          ; 
     end
     else if(SL_equal3)begin
-        O_result_first_flag <= S_sum_valid && (~S_sum_valid_lck); 
+        //O_result_first_flag <= S_sum_valid && (~S_sum_valid_lck); 
         O_result_rdy_pre4   <= S_c3sum_p4_valid ;
         O_result            <= S_c3sum          ; 
     end
     else if(SL_more3)begin
-        O_result_first_flag <= S_sum_valid && (~S_sum_valid_lck); 
+        //O_result_first_flag <= S_sum_valid && (~S_sum_valid_lck); 
         O_result_rdy_pre4   <= S_m3sum_p4_valid ;
         O_result            <= S_m3sum          ; 
     end
     else begin
-        O_result_first_flag <= 1'b0             ; 
+        //O_result_first_flag <= 1'b0             ; 
         O_result_rdy_pre4   <= 1'b0             ;
         O_result            <= {C_OUT{1'b0}}    ;
     end
 end
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// simulation 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+wire                            S_result_rdy_sim    ;
+
+dly #(
+    .C_DATA_WIDTH   (1                  ), 
+    .C_DLY_NUM      (4                  ))
+u_ndfirst_flag(
+    .I_clk          (I_clk              ),
+    .I_din          (O_result_rdy_pre4  ),//dly=3
+    .O_dout         (S_result_rdy_sim   ) //dly=27
+);
+
 
 endmodule
 
