@@ -1503,7 +1503,7 @@ initial begin
         if(fp_valid)begin
             for(p=0;p<8;p=p+1)begin
                 for(c=0;c<16;c=c+1)begin
-                    $fdisplay(fp, "%8x ",psim[p][c]);
+                    $fdisplay(fp, "%12x ",psim[p][c]);
                     //$fdisplay(fp, "%8x ",AESL_inst_cnna.u_main_process.u_process_element.compute.pix[p].cog[c].u_macc2d.S_psim);
                 end
             end

@@ -208,7 +208,7 @@ ap_done_lck u_mpap_done_lck(
 assign S_done_lck = S_tcap_done_lck                 & 
                     S_ldap_done_lck                 & 
                     S_swap_done_lck                 & 
-                    //(S_peap_done_lck|(~I_cnv_en))   & 
+                    (S_peap_done_lck|(~I_cnv_en))   & 
                     (S_pqap_done_lck|(~I_cnv_en)); 
 always @(posedge I_clk)begin
     //S_all_done_lck  <=  S_ldap_done_lck & 

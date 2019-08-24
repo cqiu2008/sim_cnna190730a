@@ -320,14 +320,19 @@ end
 always @(posedge I_clk)begin
     if(SC_cig_valid)begin
         if(SC_kw_valid)begin
-            SC_k_cnt <= SC_k_cnt + {{(C_FILTER_WIDTH-1){1'b0}},1'b1}    ;
+            if(SC_k_cnt == (I_kernel_w+SR_kh_kernel_w-1))begin
+                SC_k_cnt <= SR_kh_kernel_w                                  ; 
+            end
+            else begin
+                SC_k_cnt <= SC_k_cnt + {{(C_FILTER_WIDTH-1){1'b0}},1'b1}    ;
+            end
         end
         else begin
-            SC_k_cnt <= SC_k_cnt                                        ; 
+            SC_k_cnt <= SC_k_cnt                                            ; 
         end
     end
     else begin
-            SC_k_cnt <= SR_kh_kernel_w                                  ; 
+            SC_k_cnt <= SR_kh_kernel_w                                      ; 
     end
 end
 

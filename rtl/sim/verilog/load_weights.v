@@ -151,6 +151,8 @@ reg  [  C_RAM_ADDR_WIDTH-1:0]S_blk_id_t4                    ;
 reg  [  C_RAM_ADDR_WIDTH-1:0]S_blk_id_t5                    ;
 reg                          S_ap_done                      ;
 reg                          S_ap_done_1d                   ;
+reg                          S_ap_done_2d                   ;
+reg                          S_ap_done_3d                   ;
 wire S_wren[C_PECI_NUM-1:0][0:C_PECODIV_NUM-1]              ;
 wire [C_M_AXI_LEN_WIDTH-1 :0]S_maxi_arlen                   ; 
 wire [       C_COEF_DATA-1:0]S_crdata                       ;
@@ -399,7 +401,9 @@ end
 
 always @(posedge I_clk)begin
     S_ap_done_1d <= S_ap_done                   ;
-    O_ap_done <= S_ap_done && (!S_ap_done_1d)   ;
+    S_ap_done_2d <= S_ap_done_1d                ;
+    S_ap_done_3d <= S_ap_done_2d                ;
+    O_ap_done <= S_ap_done_2d && (!S_ap_done_3d);
 end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

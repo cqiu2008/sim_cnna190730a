@@ -804,18 +804,21 @@ generate
 endgenerate
 
 always @(posedge I_clk)begin
-    if(!SR_sbuf0_en)begin
-        O_srdata0 <= SC_lrdata0[0]  ;
-        O_srdata1 <= SC_lrdata0[1]  ;
-    end
-    else if(!SR_sbuf1_en)begin
-        O_srdata0 <= SC_lrdata1[0]  ;
-        O_srdata1 <= SC_lrdata1[1]  ;
-    end
-    else begin
-        O_srdata0 <= 0              ; 
-        O_srdata1 <= 0              ; 
-    end
+    O_srdata0 <= SC_lrdata0[0]  ;
+    O_srdata1 <= SC_lrdata1[0]  ;
+
+    // if(!SR_sbuf0_en)begin
+    //     O_srdata0 <= SC_lrdata0[0]  ;
+    //     O_srdata1 <= SC_lrdata0[1]  ;
+    // end
+    // else if(!SR_sbuf1_en)begin
+    //     O_srdata0 <= SC_lrdata1[0]  ;
+    //     O_srdata1 <= SC_lrdata1[1]  ;
+    // end
+    // else begin
+    //     O_srdata0 <= 0              ; 
+    //     O_srdata1 <= 0              ; 
+    // end
 end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
