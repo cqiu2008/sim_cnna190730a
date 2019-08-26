@@ -50,6 +50,8 @@ parameter
     C_M_AXI_ADDR_WIDTH      = 32        ,
     C_M_AXI_DATA_WIDTH      = 128       ,
     C_COEF_DATA             = 8*16*32   , 
+    C_OBUF_WIDTH            = 24        ,
+    C_LOBUF_WIDTH           = 8*32*24   ,
     C_RAM_ADDR_WIDTH        = 9         ,
     C_RAM_DATA_WIDTH        = 128       , 
     C_RAM_LDATA_WIDTH       = 128*8       
@@ -67,7 +69,12 @@ input       [C_RAM_LDATA_WIDTH-1 :0]I_srdata0           ,//dly=6
 input       [C_RAM_LDATA_WIDTH-1 :0]I_srdata1           , 
 //cbuf,coefficient as weight
 output      [  C_RAM_ADDR_WIDTH-1:0]O_craddr            ,//dly=4 
-input       [       C_COEF_DATA-1:0]I_crdata            ,//dly=7
+input       [ C_COEF_DATA_WIDTH-1:0]I_crdata            ,//dly=7
+//obuf
+input       [  C_RAM_ADDR_WIDTH-1:0]I_oraddr            ,//
+output      [     C_LOBUF_WIDTH-1:0]O_ordata0           ,
+output      [     C_LOBUF_WIDTH-1:0]O_ordata1           ,
+
 // reg
 input       [       C_DIM_WIDTH-1:0]I_hindex            ,
 input       [     C_CNV_K_WIDTH-1:0]I_kh                ,
@@ -181,6 +188,8 @@ reg  [       C_PIX_WIDTH-1:0]SC_iarray[0:C_PEPIX-1]                         ;//d
 wire [       C_SUM_WIDTH-1:0]SC_oarray_t1a[0:C_PEPIX-1][0:C_HALF_PECO-1]    ;
 wire [       C_SUM_WIDTH-1:0]SC_oarray_t1b[0:C_PEPIX-1][0:C_HALF_PECO-1]    ;
 wire [       C_SUM_WIDTH-1:0]SC_oarray[0:C_PEPIX-1][0:C_PECO-1]             ;
+wire [      C_OBUF_WIDTH-1:0]SC_ordata0[0:C_PEPIX-1][0:C_PECO-1]            ; 
+wire [      C_OBUF_WIDTH-1:0]SC_ordata1[0:C_PEPIX-1][0:C_PECO-1]            ; 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // initial layer variable
@@ -564,7 +573,7 @@ generate
                     .C_MEM_STYLE    (C_MEM_STYLE                ),
                     .C_CNT          (C_KCI_GROUP                ),
                     .C_ISIZE        (C_SUM_WIDTH                ),
-                    .C_DSIZE        (C_QOBUF_WIDTH              ),
+                    .C_DSIZE        (C_OBUF_WIDTH               ),
                     .C_ASIZE        (C_RAM_ADDR_WIDTH           ))
                 u_aram(
                     .I_clk          (I_clk                      ),
@@ -574,9 +583,14 @@ generate
                     .I_din_valid    (SC_mdcig_valid_1d          ),//dly=27
                     .I_din          (SC_oarray[p_idx][co_idx]   ),
                     .I_dven         (SC_ram_dven                ),
-                    .I_raddr        (                           ),
-                    .O_rdata        (                           )     
+                    .I_raddr        (I_oraddr                   ),
+                    .O_rdata0       (SC_ordata0[p_idx][co_idx]  ),     
+                    .O_rdata1       (SC_ordata1[p_idx][co_idx]  )
                 );
+                assign O_ordata0[(p_idx*C_PECO+co_idx+1)*C_OBUF_WIDTH-1:
+                                 (p_idx*C_PECO+co_idx  )*C_OBUF_WIDTH   )] = SC_ordata0[p_idx][co_idx];
+                assign O_ordata1[(p_idx*C_PECO+co_idx+1)*C_OBUF_WIDTH-1:
+                                 (p_idx*C_PECO+co_idx  )*C_OBUF_WIDTH   )] = SC_ordata1[p_idx][co_idx];
             end
         end
     end

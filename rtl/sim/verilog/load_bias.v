@@ -35,6 +35,7 @@ parameter
     C_M_AXI_LEN_WIDTH       = 32    ,
     C_M_AXI_ADDR_WIDTH      = 32    ,
     C_M_AXI_DATA_WIDTH      = 128   ,
+    C_LBIAS_WIDTH           = 32*16 , 
     C_RAM_ADDR_WIDTH        = 10    ,
     C_RAM_DATA_WIDTH        = 128   
 )(
@@ -48,7 +49,7 @@ input       [C_M_AXI_ADDR_WIDTH-1:0]I_base_addr     ,
 input       [C_RAM_ADDR_WIDTH-1  :0]I_len           ,
 // inter mem bus 
 input       [  C_RAM_ADDR_WIDTH-1:0]I_braddr        ,        
-output      [  C_RAM_DATA_WIDTH-1:0]O_brdata        ,
+output      [     C_LBIAS_WIDTH-1:0]O_brdata        ,
 // master read address channel
 output      [C_M_AXI_LEN_WIDTH-1 :0]O_maxi_arlen    ,
 input                               I_maxi_arready  ,   
@@ -66,13 +67,14 @@ wire  [C_RAM_ADDR_WIDTH-1  :0]S_waddr         ;
 wire  [C_RAM_DATA_WIDTH-1  :0]S_wdata         ;
 wire                          S_wr            ;
 reg   [C_RAM_ADDR_WIDTH-1  :0]S_waddr_1d      ;
-reg   [C_RAM_DATA_WIDTH-1  :0]S_wdata_1d      ;
+reg   [   C_LBIAS_WIDTH-1  :0]S_wdata_1d      ;
+
 reg                           S_wr_1d         ;
 
 always @(posedge I_clk)begin
-    S_waddr_1d  <= I_ap_start ? S_waddr : I_braddr  ;
-    S_wdata_1d  <= S_wdata                          ;
-    S_wr_1d     <= S_wr                             ;
+    S_waddr_1d  <= I_ap_start ? S_waddr : I_braddr                          ;
+    S_wdata_1d  <= {S_wdata,S_wdata_1d[C_LBIAS_WIDTH-1:C_RAM_DATA_WIDTH]}   ;
+    S_wr_1d     <= S_wr&&(&S_waddr[1:0])                                    ;
 end
 
 axibus2rambus #(
@@ -102,13 +104,13 @@ u0_axibus2rambus_bias(
 spram #(
     .MEM_STYLE ( "block"            ),//"distributed"
     .ASIZE     ( C_RAM_ADDR_WIDTH   ), 
-    .DSIZE     ( C_RAM_DATA_WIDTH   ))
+    .DSIZE     ( C_LBIAS_WIDTH      ))
 u0_spram (
-    .I_clk	 (I_clk	        ),
-    .I_addr	 (S_waddr_1d	),
-    .I_data	 (S_wdata_1d	),
-    .I_wr	 (S_wr_1d	    ),
-    .O_data	 (O_brdata      )
+    .I_clk	 (I_clk	                            ),
+    .I_addr	 (S_waddr_1d[C_RAM_ADDR_WIDTH-1:2]	),
+    .I_data	 (S_wdata_1d	                    ),
+    .I_wr	 (S_wr_1d	                        ),
+    .O_data	 (O_brdata                          )
 );
 
 endmodule

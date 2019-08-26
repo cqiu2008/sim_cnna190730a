@@ -43,6 +43,7 @@ parameter
     C_M_AXI_DATA_WIDTH      = 128       ,
     C_COEF_DATA             = 8*16*32   , 
     C_BIAS_DATA             = 32        , 
+    C_LBIAS_WIDTH           = 32 * 16   , 
     C_RAM_ADDR_WIDTH        = 9         ,
     C_RAM_DATA_WIDTH        = 128       
 )(
@@ -63,7 +64,7 @@ input       [C_M_AXI_ADDR_WIDTH-1:0]I_base_addr     ,
 input       [  C_RAM_ADDR_WIDTH-1:0]I_craddr        ,        
 output      [       C_COEF_DATA-1:0]O_crdata        ,
 input       [  C_RAM_ADDR_WIDTH-1:0]I_braddr        ,        
-output      [  C_RAM_DATA_WIDTH-1:0]O_brdata        ,
+output      [     C_LBIAS_WIDTH-1:0]O_brdata        ,
 // master read address channel
 output reg  [C_M_AXI_LEN_WIDTH-1 :0]O_maxi_arlen    ,
 input                               I_maxi_arready  ,   
@@ -141,11 +142,12 @@ always @(posedge I_clk)begin
 end
 
 load_bias #(
-    .C_M_AXI_LEN_WIDTH   (C_M_AXI_LEN_WIDTH    ),
-    .C_M_AXI_ADDR_WIDTH  (C_M_AXI_ADDR_WIDTH   ),
-    .C_M_AXI_DATA_WIDTH  (C_M_AXI_DATA_WIDTH   ),
-    .C_RAM_ADDR_WIDTH    (C_RAM_ADDR_WIDTH     ),
-    .C_RAM_DATA_WIDTH    (C_RAM_DATA_WIDTH     ))
+    .C_M_AXI_LEN_WIDTH   (C_M_AXI_LEN_WIDTH     ),
+    .C_M_AXI_ADDR_WIDTH  (C_M_AXI_ADDR_WIDTH    ),
+    .C_M_AXI_DATA_WIDTH  (C_M_AXI_DATA_WIDTH    ),
+    .C_LBIAS_WIDTH       (C_LBIAS_WIDTH         ), 
+    .C_RAM_ADDR_WIDTH    (C_RAM_ADDR_WIDTH      ),
+    .C_RAM_DATA_WIDTH    (C_RAM_DATA_WIDTH      ))
 u0_load_bias (
     .I_clk          (I_clk                          ),
     .I_ap_start     (S_bap_start                    ),

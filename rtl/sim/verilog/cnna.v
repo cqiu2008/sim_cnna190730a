@@ -642,6 +642,7 @@ localparam C_M_AXI_FIADDR_WIDTH = C_M_AXI_FIN_DDR_ADDR_WIDTH   ;
 localparam C_M_AXI_FIDATA_WIDTH = C_M_AXI_FIN_DDR_DATA_WIDTH   ; 
 localparam C_M_AXI_FOADDR_WIDTH = C_M_AXI_FIN_DDR_ADDR_WIDTH   ;
 localparam C_M_AXI_FODATA_WIDTH = C_M_AXI_FIN_DDR_DATA_WIDTH   ; 
+localparam C_LBIAS_WIDTH        = 32 * 16                      ;
 
 wire    [C_M_AXI_LEN_WIDTH-1 :0]S_fimaxi_arlen     ;
 wire                            S_fimaxi_arready   ;   
@@ -663,7 +664,7 @@ wire                            S_fomaxi_bready    ;
 wire  [  C_RAM_ADDR_WIDTH-1  :0]S_craddr           ;        
 wire  [       C_COEF_DATA-1  :0]S_crdata           ;
 wire  [  C_RAM_ADDR_WIDTH-1  :0]S_braddr           ;        
-wire  [  C_RAM_DATA_WIDTH-1  :0]S_brdata           ;
+wire  [     C_LBIAS_WIDTH-1  :0]S_brdata           ;
 
 cnna_axilite_s_axi #(
     .C_S_AXI_ADDR_WIDTH( C_S_AXI_AXILITE_ADDR_WIDTH ),
@@ -1157,6 +1158,7 @@ main_process #(
     .C_POWER_OF_PEPIX    ( 3                            ),
     .C_POWER_OF_PECODIV  ( 1                            ),
     .C_POWER_OF_RDBPIX   ( 1                            ), 
+    .C_SUBLAYERS_WIDTH   (11                            )
     .C_DATA_WIDTH        ( 8                            ), 
     .C_QIBUF_WIDTH       ( 12                           ), 
     .C_QOBUF_WIDTH       ( 24                           ), 
@@ -1178,6 +1180,8 @@ u_main_process(
     .I_base_addr         (fiddr_V                       ),
     .I_cnv_en            (layer_enPara_cnvEn            ),
     .I_pool_en           (layer_enPara_poolEn           ),
+    .I_sublayer_num      (layer_wPara_sublayerNum_V     ),
+    .I_sublayer_seq      (layer_wPara_sublayerSeq_V     ),
     .I_ipara_addr_img_in (layer_iPara_memAddrImgIn_V    ),
     .I_kernel_h          (layer_cnvPara_kernel_h_V      ),
     .I_kernel_w          (layer_cnvPara_kernel_w_V      ),
@@ -1228,6 +1232,7 @@ load_all_weights #(
     .C_M_AXI_DATA_WIDTH ( 128               ),
     .C_COEF_DATA        (C_COEF_DATA        ),
     .C_BIAS_DATA        (C_BIAS_DATA        ),
+    .C_LBIAS_WIDTH      (C_LBIAS_WIDTH      ), 
     .C_RAM_ADDR_WIDTH   (C_RAM_ADDR_WIDTH   ),
     .C_RAM_DATA_WIDTH   (C_RAM_DATA_WIDTH   ))
 u0_load_all_weights(

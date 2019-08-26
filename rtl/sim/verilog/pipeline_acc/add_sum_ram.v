@@ -46,7 +46,8 @@ input                               I_din_valid     ,//dly=0
 input       [C_ISIZE-1           :0]I_din           ,
 input                               I_dven          ,
 input       [C_ASIZE-1           :0]I_raddr         ,
-output      [C_DSIZE-1           :0]O_rdata             
+output      [C_DSIZE-1           :0]O_rdata0        ,          
+output      [C_DSIZE-1           :0]O_rdata1              
 );
 
 //wire                            S_first_flag;
@@ -87,7 +88,8 @@ u_sum_ram(
     .I_din        (S_result         ),
     .I_dven       (I_dven           ),
     .I_raddr      (I_raddr          ),
-    .O_rdata      (O_rdata          )    
+    .O_rdata0     (O_rdata0         ),    
+    .O_rdata1     (O_rdata1         )    
 );
 
 endmodule

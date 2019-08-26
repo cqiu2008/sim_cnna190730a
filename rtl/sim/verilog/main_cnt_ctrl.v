@@ -45,6 +45,7 @@ parameter
 input                               I_clk               ,
 input                               I_cnv_en            ,
 input                               I_pool_en           ,
+input                               I_mainpost_en       , 
 input       [       C_DIM_WIDTH-1:0]I_hcnt_total        ,
 output reg  [       C_DIM_WIDTH-1:0]O_hcnt              ,
 output      [       C_DIM_WIDTH-1:0]O_hcnt_pre          ,
@@ -140,11 +141,11 @@ ap_start_ctrl u_ppap_start(
 );
 
 ap_start_ctrl u_mpap_start(
-    .I_clk           (I_clk             ),
-    .I_ap_start_en   (I_ap_start        ),
-    .I_ap_start_pose (S_ap_start_pose   ),
-    .I_ap_done       (I_mpap_done       ),
-    .O_ap_start      (O_mpap_start      )
+    .I_clk           (I_clk                     ),
+    .I_ap_start_en   (I_ap_start&&I_mainpost_en ), 
+    .I_ap_start_pose (S_ap_start_pose           ),
+    .I_ap_done       (I_mpap_done               ),
+    .O_ap_start      (O_mpap_start              )
 );
 
 ap_done_lck u_tcap_done_lck(
@@ -198,11 +199,11 @@ ap_done_lck u_ppap_done_lck(
 );
 
 ap_done_lck u_mpap_done_lck(
-    .I_clk         (I_clk                ),
-    .I_ap_start    (I_ap_start           ),
-    .I_ap_done     (I_mpap_done          ),
-    .I_ap_clear    (S_ap_start_pose      ),
-    .O_ap_done_lck (S_mpap_done_lck      )     
+    .I_clk         (I_clk                       ),
+    .I_ap_start    (I_ap_start&&I_mainpost_en   ),
+    .I_ap_done     (I_mpap_done                 ),
+    .I_ap_clear    (S_ap_start_pose             ),
+    .O_ap_done_lck (S_mpap_done_lck             )     
 );
 
 assign S_done_lck = S_tcap_done_lck                 & 

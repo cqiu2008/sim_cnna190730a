@@ -43,6 +43,7 @@ parameter
     C_QIBUF_WIDTH           = 12        ,
     C_QOBUF_WIDTH           = 24        ,
     C_LQIBUF_WIDTH          = 12*8      ,       
+    C_LQOBUF_WIDTH          = 24*8      ,       
     C_CNV_K_WIDTH           = 8         ,
     C_CNV_CH_WIDTH          = 8         ,
     C_DIM_WIDTH             = 16        ,
@@ -59,11 +60,16 @@ input                               I_rst               ,
 input                               I_allap_start       ,
 input                               I_ap_start          ,
 output reg                          O_ap_done           ,
-//qbuf
-output      [C_RAM_ADDR_WIDTH-1  :0]O_qraddr0           ,//dly=3
-output      [C_RAM_ADDR_WIDTH-1  :0]O_qraddr1           , 
-input       [  C_LQIBUF_WIDTH-1  :0]I_qrdata0           ,//dly=6
-input       [  C_LQIBUF_WIDTH-1  :0]I_qrdata1           , 
+//qibuf
+output      [C_RAM_ADDR_WIDTH-1  :0]O_qiraddr0           ,//dly=3
+output      [C_RAM_ADDR_WIDTH-1  :0]O_qiraddr1           , 
+input       [  C_LQIBUF_WIDTH-1  :0]I_qirdata0           ,//dly=6
+input       [  C_LQIBUF_WIDTH-1  :0]I_qirdata1           , 
+//qobuf
+input       [C_RAM_ADDR_WIDTH-1  :0]I_qoraddr            ,
+output      [  C_LQOBUF_WIDTH-1  :0]O_qordata0           , 
+output      [  C_LQOBUF_WIDTH-1  :0]O_qordata1           , 
+
 // reg
 input       [       C_DIM_WIDTH-1:0]I_hindex            ,
 input       [     C_CNV_K_WIDTH-1:0]I_kh                ,
@@ -131,7 +137,7 @@ reg  [C_RAM_ADDR_WIDTH-1  :0]SC_depth_s1a                                   ;
 reg  [C_RAM_ADDR_WIDTH-1  :0]SC_depth_s1b                                   ;
 reg  [C_RAM_ADDR_WIDTH-1  :0]SC_depth_s2                                    ;
 reg  [C_RAM_ADDR_WIDTH-1  :0]SC_depth_s3                                    ;
-reg  [  C_LQIBUF_WIDTH-1  :0]SC_qrdata                                      ;
+reg  [  C_LQIBUF_WIDTH-1  :0]SC_qirdata                                     ;
 wire                         SC_dv                                          ;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -316,11 +322,11 @@ always @(posedge I_clk)begin
     SC_cig_valid_1d <= SC_cig_valid                         ;
 end
 
-assign O_qraddr0 = SC_depth_s3 ;
-assign O_qraddr1 = SC_depth_s3 ;
+assign O_qiraddr0 = SC_depth_s3 ;
+assign O_qiraddr1 = SC_depth_s3 ;
 
 always @(posedge I_clk)begin
-    SC_qrdata <= SR_qibuf0_en ? I_qrdata0 : I_qrdata1       ;//dly=7
+    SC_qirdata <= SR_qibuf0_en ? I_qirdata0 : I_qirdata1     ;//dly=7
 end
 
 // calculate buf_en
@@ -362,15 +368,15 @@ generate
                 .I_cnt_boundary (SL_kernel_ci_group                                     ),
                 .I_first_flag   (SC_first_flag                                          ),
                 .I_din_valid    (SC_dv                                                  ),//dly=7
-                .I_din          (SC_qrdata[(idx+1)*C_QIBUF_WIDTH-1:idx*C_QIBUF_WIDTH]   ),//dly=7
+                .I_din          (SC_qirdata[(idx+1)*C_QIBUF_WIDTH-1:idx*C_QIBUF_WIDTH]  ),//dly=7
                 .I_dven         (I_ap_start                                             ),
-                .I_raddr        (                                                       ),
-                .O_rdata        (                                                       )     
+                .I_raddr        (I_qoraddr                                              ),
+                .O_rdata0       (O_qordata0[(idx+1)*C_QOBUF_WIDTH-1:idx*C_QOBUF_WIDTH]  ),
+                .O_rdata1       (O_qordata1[(idx+1)*C_QOBUF_WIDTH-1:idx*C_QOBUF_WIDTH]  ) 
             );
         end
     end
 endgenerate
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                

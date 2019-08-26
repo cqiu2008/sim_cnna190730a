@@ -46,7 +46,8 @@ input                               I_dv_pre4       ,//dly=0
 input       [C_ISIZE-1           :0]I_din           ,
 input                               I_dven          ,
 input       [C_ASIZE-1           :0]I_raddr         ,
-output reg  [C_DSIZE-1           :0]O_rdata             
+output reg  [C_DSIZE-1           :0]O_rdata0             
+output reg  [C_DSIZE-1           :0]O_rdata1             
 );
 
 reg  [C_ASIZE-1           :0]S_waddr        ;
@@ -54,7 +55,8 @@ reg  [C_DSIZE-1           :0]S_wdata        ;
 wire                         S_wr_pre       ;        
 reg                          S_wr0          ;        
 reg                          S_wr1          ;        
-reg  [C_ASIZE-1           :0]S_raddr        ;        
+reg  [C_ASIZE-1           :0]S_raddr0       ;        
+reg  [C_ASIZE-1           :0]S_raddr1       ;        
 reg  [C_ASIZE-1           :0]S_rcnt         ;        
 reg                          S_rd           ;        
 wire [C_DSIZE-1           :0]S_rdata0       ;           
@@ -70,9 +72,11 @@ wire [C_DSIZE-1           :0]S_sum_2d       ;
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 always @(posedge I_clk)begin
-    S_raddr     <= I_dven     ? S_rcnt   : I_raddr  ;//dly=1
-    S_sumdin_1d <= I_wram0_en ? S_rdata0 : S_rdata1 ;//dly=3
-    O_rdata     <= I_wram0_en ? S_rdata1 : S_rdata0 ;
+    S_raddr0    <= I_dven&&I_wram0_en    ? S_rcnt   : I_raddr   ;//dly=1
+    S_raddr1    <= I_dven&&(~I_wram0_en) ? S_rcnt   : I_raddr   ;//dly=1
+    S_sumdin_1d <= I_wram0_en ? S_rdata0 : S_rdata1             ;//dly=3
+    O_rdata1    <= S_rdata1                                     ; 
+    O_rdata0    <= S_rdata0                                     ;
 end
 
 always @(posedge I_clk)begin
@@ -100,7 +104,7 @@ u_sdpram0(
     .I_wr        (S_wr0         ),
     .I_ce        (1'b1          ),
     .I_rclk      (I_clk         ),
-    .I_raddr     (S_raddr       ),
+    .I_raddr     (S_raddr0      ),
     .I_rd        (1'b1          ),
     .O_rdata     (S_rdata0      )    
 );
@@ -116,7 +120,7 @@ u_sdpram1(
     .I_wr        (S_wr1         ),
     .I_ce        (1'b1          ),
     .I_rclk      (I_clk         ),
-    .I_raddr     (S_raddr       ),
+    .I_raddr     (S_raddr1      ),
     .I_rd        (1'b1          ),
     .O_rdata     (S_rdata1      )    
 );

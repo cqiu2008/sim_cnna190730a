@@ -38,6 +38,7 @@ parameter
     C_POWER_OF_PEPIX        = 3         ,
     C_POWER_OF_PECODIV      = 1         ,
     C_POWER_OF_RDBPIX       = 1         , 
+    C_SUBLAYERS_WIDTH       = 11        , 
     C_DATA_WIDTH            = 8         , 
     C_QIBUF_WIDTH           = 12        , 
     C_QOBUF_WIDTH           = 24        , 
@@ -49,6 +50,7 @@ parameter
     C_M_AXI_DATA_WIDTH      = 128       ,
     C_COEF_DATA             = 8*16*32   , 
     C_BIAS_DATA             = 32        , 
+    C_LBIAS_WIDTH           = 32 * 16   ,
     C_RAM_ADDR_WIDTH        = 9         ,
     C_RAM_DATA_WIDTH        = 128       
 )(
@@ -60,6 +62,8 @@ output                              O_ap_done           ,
 // reg
 input                               I_cnv_en            ,
 input                               I_pool_en           ,
+input       [ C_SUBLAYERS_WIDTH-1:0]I_sublayer_num      , 
+input       [ C_SUBLAYERS_WIDTH-1:0]I_sublayer_seq      , 
 input       [C_M_AXI_ADDR_WIDTH-1:0]I_base_addr         ,
 input       [C_M_AXI_ADDR_WIDTH-1:0]I_ipara_addr_img_in ,
 input       [     C_CNV_K_WIDTH-1:0]I_kernel_h          ,
@@ -79,7 +83,7 @@ input       [       C_DIM_WIDTH-1:0]I_ipara_height      ,
 output      [  C_RAM_ADDR_WIDTH-1:0]O_craddr            ,        
 input       [       C_COEF_DATA-1:0]I_crdata            ,
 output      [  C_RAM_ADDR_WIDTH-1:0]O_braddr            ,        
-input       [  C_RAM_DATA_WIDTH-1:0]I_brdata            ,
+input       [   C_LBIAS_WIDTH-1  :0]I_brdata            ,//brdata write here by cqiu 2019 0826
 // fi master channel
 output      [C_M_AXI_LEN_WIDTH-1 :0]O_fimaxi_arlen      ,
 input                               I_fimaxi_arready    ,   
@@ -101,10 +105,15 @@ output                              O_fomaxi_bready
 );
 
 parameter    C_PEPIX          = {1'b1,{C_POWER_OF_PEPIX{1'b0}}}     ;
+parameter    C_PECO           = {1'b1,{C_POWER_OF_PECO{1'b0}}}      ; 
+parameter    C_OBUF_WIDTH     = C_QOBUF_WIDTH                       ; 
+
 localparam   C_WO_GROUP       = C_DIM_WIDTH - C_POWER_OF_PEPIX + 1  ;
 localparam   C_CI_GROUP       = C_CNV_CH_WIDTH - C_POWER_OF_1ADOTS+1; 
 localparam   C_RAM_LDATA_WIDTH= C_RAM_DATA_WIDTH * C_PEPIX          ;
 localparam   C_LQIBUF_WIDTH   = C_QIBUF_WIDTH * C_PEPIX             ;
+localparam   C_LQOBUF_WIDTH   = C_QOBUF_WIDTH * C_PEPIX             ;
+localparam   C_LOBUF_WIDTH    = C_OBUF_WIDTH * C_PEPIX*C_PECO       ;
 
 wire         [       C_DIM_WIDTH-1:0]S_hcnt                         ;
 wire         [       C_DIM_WIDTH-1:0]S_hcnt_pre                     ;
@@ -149,10 +158,16 @@ reg                                  S_mainpost_cnt_en              ;
 reg                                  S_mainpost_cnt_en_1d           ;
 reg          [       C_DIM_WIDTH-1:0]S_posthaddr                    ;
 reg                                  S_enwr_obuf0                   ;
-wire         [C_RAM_ADDR_WIDTH-1  :0]S_qraddr0                      ;//dly=3
-wire         [C_RAM_ADDR_WIDTH-1  :0]S_qraddr1                      ; 
-wire         [  C_LQIBUF_WIDTH-1  :0]S_qrdata0                      ;//dly=6
-wire         [  C_LQIBUF_WIDTH-1  :0]S_qrdata1                      ; 
+wire         [C_RAM_ADDR_WIDTH-1  :0]S_qiraddr0                     ;//dly=3
+wire         [C_RAM_ADDR_WIDTH-1  :0]S_qiraddr1                     ; 
+wire         [  C_LQIBUF_WIDTH-1  :0]S_qirdata0                     ;//dly=6
+wire         [  C_LQIBUF_WIDTH-1  :0]S_qirdata1                     ; 
+wire         [C_RAM_ADDR_WIDTH-1  :0]S_qoraddr                      ;
+wire         [  C_LQOBUF_WIDTH-1  :0]S_qordata0                     ; 
+wire         [  C_LQOBUF_WIDTH-1  :0]S_qordata1                     ; 
+wire         [  C_RAM_ADDR_WIDTH-1:0]S_oraddr                       ;//
+wire         [     C_LOBUF_WIDTH-1:0]S_ordata0                      ;
+wire         [     C_LOBUF_WIDTH-1:0]S_ordata1                      ;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -235,6 +250,7 @@ u0_main_cnt_ctrl (
     .I_clk              (I_clk              ),
     .I_cnv_en           (I_cnv_en           ),
     .I_pool_en          (I_pool_en          ),
+    .I_mainpost_en      (S_mainpost_en      ), 
     .I_hcnt_total       (S_hcnt_total       ),
     .O_hcnt_pre         (S_hcnt_pre         ),
     .O_hcnt             (S_hcnt             ),
@@ -336,7 +352,6 @@ u0_load_image(
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // multi_slide_windows_flatten 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-
 multi_slide_windows_flatten #(
     .C_MEM_STYLE         (C_MEM_STYLE          ),
     .C_POWER_OF_1ADOTS   (C_POWER_OF_1ADOTS    ),
@@ -372,10 +387,10 @@ u_multi_slide_windows_flatten(
     .I_sraddr1           (S_sraddr1             ), 
     .O_srdata0           (S_srdata0             ), 
     .O_srdata1           (S_srdata1             ), 
-    .I_qraddr0           (S_qraddr0             ), 
-    .I_qraddr1           (S_qraddr1             ), 
-    .O_qrdata0           (S_qrdata0             ), 
-    .O_qrdata1           (S_qrdata1             ), 
+    .I_qraddr0           (S_qiraddr0            ), 
+    .I_qraddr1           (S_qiraddr1            ), 
+    .O_qrdata0           (S_qirdata0            ), 
+    .O_qrdata1           (S_qirdata1            ), 
     .I_ipara_height      (I_ipara_height        ),
     .I_hindex            (S_hindex[1]           ),
     .I_hcnt_odd          (S_hcnt[0]             ),//1,3,5,...active
@@ -408,7 +423,9 @@ process_element #(
     .C_M_AXI_LEN_WIDTH      (C_M_AXI_LEN_WIDTH      ),
     .C_M_AXI_ADDR_WIDTH     (C_M_AXI_ADDR_WIDTH     ),
     .C_M_AXI_DATA_WIDTH     (C_M_AXI_DATA_WIDTH     ),
-    .C_COEF_DATA            (C_COEF_DATA            ), 
+    .C_COEF_DATA_WIDTH      (C_COEF_DATA            ), 
+    .C_OBUF_WIDTH           (C_OBUF_WIDTH           ),
+    .C_LOBUF_WIDTH          (C_LOBUF_WIDTH          ), 
     .C_RAM_ADDR_WIDTH       (C_RAM_ADDR_WIDTH       ),
     .C_RAM_DATA_WIDTH       (C_RAM_DATA_WIDTH       ), 
     .C_RAM_LDATA_WIDTH      (C_RAM_LDATA_WIDTH      ))
@@ -424,6 +441,9 @@ u_process_element(
     .I_srdata1              (S_srdata1              ), 
     .O_craddr               (O_craddr               ),//dly=3       
     .I_crdata               (I_crdata               ),//dly=6
+    .I_oraddr               (S_oraddr               ),//
+    .O_ordata0              (S_ordata0              ),
+    .O_ordata1              (S_ordata1              ),
     .I_hindex               (S_hindex[2]            ),
     .I_kh                   (S_kh[2]                ),
     .I_kernel_h             (I_kernel_h             ),
@@ -503,6 +523,7 @@ process_qbuf #(
     .C_QIBUF_WIDTH       (C_QIBUF_WIDTH        ),
     .C_QOBUF_WIDTH       (C_QOBUF_WIDTH        ),
     .C_LQIBUF_WIDTH      (C_LQIBUF_WIDTH       ),       
+    .C_LQOBUF_WIDTH      (C_LQOBUF_WIDTH       ), 
     .C_CNV_K_WIDTH       (C_CNV_K_WIDTH        ),
     .C_CNV_CH_WIDTH      (C_CNV_CH_WIDTH       ),
     .C_DIM_WIDTH         (C_DIM_WIDTH          ),
@@ -518,10 +539,13 @@ u_process_qbuf(
     .I_allap_start       (I_ap_start            ),
     .I_ap_start          (S_pqap_start          ),
     .O_ap_done           (S_pqap_done           ),
-    .O_qraddr0           (S_qraddr0             ),//dly=3
-    .O_qraddr1           (S_qraddr1             ), 
-    .I_qrdata0           (S_qrdata0             ),//dly=6
-    .I_qrdata1           (S_qrdata1             ), 
+    .O_qiraddr0          (S_qiraddr0            ),//dly=3
+    .O_qiraddr1          (S_qiraddr1            ), 
+    .I_qirdata0          (S_qirdata0            ),//dly=6
+    .I_qirdata1          (S_qirdata1            ), 
+    .I_qoraddr           (S_qoraddr             ),
+    .O_qordata0          (S_qordata0            ), 
+    .O_qordata1          (S_qordata1            ), 
     .I_hindex            (S_hindex[2]           ),
     .I_kh                (S_kh[2]               ),
     .I_kernel_h          (I_kernel_h            ),
@@ -568,3 +592,4 @@ u_process_qbuf(
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 endmodule
+
