@@ -1475,19 +1475,21 @@ endtask
 `ifndef POST_SYN
 
 `endif
-wire fp_valid ;
-assign fp_valid = AESL_inst_cnna.u_main_process.u_process_element.SC_mdcig_valid_1d;
 
-//always @(posedge I_clk)begin
-//    fp_valid = AESL_inst_cnna.u_main_process.u_process_element.SC_ndcig_valid;
-//end
-wire [47:0]psim[0:7][0:15];
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// write obuf sim 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+wire wrsim[0:7][0:31];
+wire [31:0]wdatasim[0:7][0:31];
 genvar ap,ac;
 generate
     begin
         for(ap=0;ap<8;ap=ap+1)begin
-            for(ac=0;ac<16;ac=ac+1)begin
-               assign psim[ap][ac] =  AESL_inst_cnna.u_main_process.u_process_element.compute.pix[ap].cog[ac].u_macc2d.S_psim;
+            for(ac=0;ac<32;ac=ac+1)begin
+               assign wrsim[ap][ac]    = AESL_inst_cnna.u_main_process.u_process_element.obuf.pix[ap].co[ac].u_aram.u_sum_ram.S_wr0
+                                | AESL_inst_cnna.u_main_process.u_process_element.obuf.pix[ap].co[ac].u_aram.u_sum_ram.S_wr1;
+
+               assign wdatasim[ap][ac] = AESL_inst_cnna.u_main_process.u_process_element.obuf.pix[ap].co[ac].u_aram.u_sum_ram.S_wdata;
             end
         end
     end
@@ -1500,18 +1502,60 @@ initial begin
     while(1)begin
         @(negedge AESL_clock);
         #1ns;
-        if(fp_valid)begin
-            for(p=0;p<8;p=p+1)begin
-                for(c=0;c<16;c=c+1)begin
-                    $fdisplay(fp, "%12x ",psim[p][c]);
-                    //$fdisplay(fp, "%8x ",AESL_inst_cnna.u_main_process.u_process_element.compute.pix[p].cog[c].u_macc2d.S_psim);
+        for(p=0;p<8;p=p+1)begin
+            for(c=0;c<32;c=c+1)begin
+                if(wrsim[p][c])begin
+                    $fwrite(fp, "%08x ",wdatasim[p][c]);
+                    if(c==31)begin
+                        $fwrite(fp, "\n");
+                    end
                 end
+                //$fdisplay(fp, "%8x ",AESL_inst_cnna.u_main_process.u_process_element.compute.pix[p].cog[c].u_macc2d.S_psim);
             end
         end
             //AESL_inst_cnna.u_main_process.u_process_element.compute.pix[0].cog[0].u_macc2d.a1.ci[0].u_dsp_unit.O_product
     end
     $fclose(fp);
 end
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// macc sim
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// wire fp_valid ;
+// assign fp_valid = AESL_inst_cnna.u_main_process.u_process_element.SC_mdcig_valid_1d;
+// 
+// wire [47:0]psim[0:7][0:15];
+// genvar ap,ac;
+// generate
+//     begin
+//         for(ap=0;ap<8;ap=ap+1)begin
+//             for(ac=0;ac<16;ac=ac+1)begin
+//                assign psim[ap][ac] =  AESL_inst_cnna.u_main_process.u_process_element.compute.pix[ap].cog[ac].u_macc2d.S_psim;
+//             end
+//         end
+//     end
+// endgenerate
+// 
+// initial begin
+//     integer fp;
+//     integer p,c;
+//     fp = $fopen("cnna.log", "w");
+//     while(1)begin
+//         @(negedge AESL_clock);
+//         #1ns;
+//         if(fp_valid)begin
+//             for(p=0;p<8;p=p+1)begin
+//                 for(c=0;c<16;c=c+1)begin
+//                     $fdisplay(fp, "%12x ",psim[p][c]);
+//                     //$fdisplay(fp, "%8x ",AESL_inst_cnna.u_main_process.u_process_element.compute.pix[p].cog[c].u_macc2d.S_psim);
+//                 end
+//             end
+//         end
+//             //AESL_inst_cnna.u_main_process.u_process_element.compute.pix[0].cog[0].u_macc2d.a1.ci[0].u_dsp_unit.O_product
+//     end
+//     $fclose(fp);
+// end
 
 
 // initial begin

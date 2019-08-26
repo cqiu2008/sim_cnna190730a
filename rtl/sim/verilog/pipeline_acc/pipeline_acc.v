@@ -251,7 +251,7 @@ u_addr_pp2(
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //should pre 4clk than S_sum_valid
-assign S_c1sum_p4_valid  = S_sum_base_valid  ; 
+assign S_c1sum_p4_valid  = S_sum_base_valid&&S_op_rdy_valid ; 
 
 dly #(
     .C_DATA_WIDTH   (C_OUT      ), 
@@ -289,7 +289,7 @@ u_c1sum(
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //should pre 4clk than S_sum_valid
-assign S_c2sum_p4_valid  = S_sum_base_valid  ; 
+assign S_c2sum_p4_valid  = S_sum_base_valid&&S_op_rdy_valid ;
 
 //should pre 1clk than S_sum_valid
 assign S_c2sum_valid     = S_sum_base_valid  ;
@@ -330,7 +330,7 @@ u_c2sum(
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //should pre 4clk than S_sum_valid
-assign S_c3sum_p4_valid  = S_sum_base_valid  ;
+assign S_c3sum_p4_valid  = S_sum_base_valid&&S_op_rdy_valid   ;
 
 //should pre 1clk than S_sum_valid
 always @(posedge I_clk)begin
@@ -398,7 +398,7 @@ u_c3sum(
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //should pre 4clk than S_sum_valid
-assign S_m3sum_p4_valid  = S_sum_base_valid     ; 
+assign S_m3sum_p4_valid  = S_sum_base_valid&&S_op_rdy_valid      ; 
 assign S_m3sum           = S_sum                ;
 
 //should pre 1clk than S_sum_valid

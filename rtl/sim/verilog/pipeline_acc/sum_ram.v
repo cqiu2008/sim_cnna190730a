@@ -60,7 +60,7 @@ reg                          S_rd           ;
 wire [C_DSIZE-1           :0]S_rdata0       ;           
 wire [C_DSIZE-1           :0]S_rdata1       ;           
 reg  [C_DSIZE-1           :0]S_sumdin_1d    ;     
-wire [C_DSIZE-1           :0]S_sum_tmp      ;     
+reg  [C_DSIZE-1           :0]S_sum_tmp      ;     
 //wire [C_DSIZE-1           :0]S_sum      ;     
 //wire [C_DSIZE-1           :0]S_sum_1d   ;     
 wire [C_DSIZE-1           :0]S_sum_2d       ;     
@@ -70,8 +70,8 @@ wire [C_DSIZE-1           :0]S_sum_2d       ;
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 always @(posedge I_clk)begin
-    S_raddr     <= I_dven     ? S_rcnt   : I_raddr  ;//dly=2 
-    S_sumdin_1d <= I_wram0_en ? S_rdata0 : S_rdata1 ;//dly=4
+    S_raddr     <= I_dven     ? S_rcnt   : I_raddr  ;//dly=1
+    S_sumdin_1d <= I_wram0_en ? S_rdata0 : S_rdata1 ;//dly=3
     O_rdata     <= I_wram0_en ? S_rdata1 : S_rdata0 ;
 end
 
@@ -124,10 +124,10 @@ u_sdpram1(
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // add process 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-assign S_sum_tmp = I_first_flag ? {C_DSIZE{1'b0}} : S_sumdin_1d  ;
+always @(posedge I_clk)begin
+    S_sum_tmp <= I_first_flag ? {C_DSIZE{1'b0}} : S_sumdin_1d  ;//dly=4
+end
 //assign S_sum     = S_sum_tmp + I_din  ;
-
 adder_pp2 #(
     .C_IN1  (C_DSIZE ),
     .C_IN2  (C_DSIZE ),
@@ -158,7 +158,6 @@ always @(posedge I_clk)begin
     S_wr0 <= S_wr_pre && I_wram0_en     ;
     S_wr1 <= S_wr_pre && (~I_wram0_en)  ;
 end
-
 
 // S_waddr
 always @(posedge I_clk)begin
