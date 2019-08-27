@@ -215,7 +215,7 @@ parameter C_M_AXI_ADDR_WIDTH  = 32                  ;
 parameter C_RAM_ADDR_WIDTH    = 9                   ; 
 parameter C_RAM_DATA_WIDTH    = 128                 ; 
 parameter C_COEF_DATA         = 8*16*32             ;
-parameter C_BIAS_DATA         = 32                  ;
+parameter C_BIAS_WIDTH        = 32                  ;
 
 input   ap_clk;
 input   ap_rst_n;
@@ -1158,7 +1158,11 @@ main_process #(
     .C_POWER_OF_PEPIX    ( 3                            ),
     .C_POWER_OF_PECODIV  ( 1                            ),
     .C_POWER_OF_RDBPIX   ( 1                            ), 
-    .C_SUBLAYERS_WIDTH   (11                            )
+    .C_SUBLAYERS_WIDTH   (11                            ),
+    .C_QM0_WIDTH         (16                            ),   
+    .C_QN_WIDTH          (32                            ),
+    .C_QZ2_WIDTH         (16                            ),
+    .C_QZ3_WIDTH         (32                            ),
     .C_DATA_WIDTH        ( 8                            ), 
     .C_QIBUF_WIDTH       ( 12                           ), 
     .C_QOBUF_WIDTH       ( 24                           ), 
@@ -1169,7 +1173,8 @@ main_process #(
     .C_M_AXI_ADDR_WIDTH  ( 32                           ),
     .C_M_AXI_DATA_WIDTH  ( 128                          ),
     .C_COEF_DATA         (C_COEF_DATA                   ),
-    .C_BIAS_DATA         (C_BIAS_DATA                   ),
+    .C_BIAS_WIDTH        (C_BIAS_WIDTH                  ),
+    .C_LBIAS_WIDTH       (C_LBIAS_WIDTH                 ), 
     .C_RAM_ADDR_WIDTH    ( 9                            ),
     .C_RAM_DATA_WIDTH    ( 128                          ))
 u_main_process(
@@ -1197,6 +1202,10 @@ u_main_process(
     .I_ipara_ci          (layer_iPara_ciAlign_V         ),
     .I_ipara_width       (layer_iPara_width             ),
     .I_ipara_height      (layer_iPara_height            ),
+    .I_qm0               (layer_qPara_qM0               ),
+    .I_qn                (layer_qPara_qN                ),
+    .I_qz2               (layer_qPara_qZ2               ),
+    .I_qz3               (layer_qPara_qZ3               ),
     .O_craddr            (S_craddr                      ),        
     .I_crdata            (S_crdata                      ),
     .O_braddr            (S_braddr                      ),        
@@ -1231,7 +1240,7 @@ load_all_weights #(
     .C_M_AXI_ADDR_WIDTH ( 32                ),
     .C_M_AXI_DATA_WIDTH ( 128               ),
     .C_COEF_DATA        (C_COEF_DATA        ),
-    .C_BIAS_DATA        (C_BIAS_DATA        ),
+    .C_BIAS_WIDTH       (C_BIAS_WIDTH       ),
     .C_LBIAS_WIDTH      (C_LBIAS_WIDTH      ), 
     .C_RAM_ADDR_WIDTH   (C_RAM_ADDR_WIDTH   ),
     .C_RAM_DATA_WIDTH   (C_RAM_DATA_WIDTH   ))

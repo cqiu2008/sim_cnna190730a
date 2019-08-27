@@ -106,11 +106,11 @@ spram #(
     .ASIZE     ( C_RAM_ADDR_WIDTH   ), 
     .DSIZE     ( C_LBIAS_WIDTH      ))
 u0_spram (
-    .I_clk	 (I_clk	                            ),
-    .I_addr	 (S_waddr_1d[C_RAM_ADDR_WIDTH-1:2]	),
-    .I_data	 (S_wdata_1d	                    ),
-    .I_wr	 (S_wr_1d	                        ),
-    .O_data	 (O_brdata                          )
+    .I_clk	 (I_clk	                                    ),
+    .I_addr	 ({2'b0,S_waddr_1d[C_RAM_ADDR_WIDTH-1:2]}	),
+    .I_data	 (S_wdata_1d	                            ),
+    .I_wr	 (S_wr_1d	                                ),
+    .O_data	 (O_brdata                                  )
 );
 
 endmodule

@@ -39,6 +39,10 @@ parameter
     C_POWER_OF_PECODIV      = 1         ,
     C_POWER_OF_RDBPIX       = 1         , 
     C_SUBLAYERS_WIDTH       = 11        , 
+    C_QM0_WIDTH             = 16        ,   
+    C_QN_WIDTH              = 32        ,
+    C_QZ2_WIDTH             = 16        ,
+    C_QZ3_WIDTH             = 32        ,
     C_DATA_WIDTH            = 8         , 
     C_QIBUF_WIDTH           = 12        , 
     C_QOBUF_WIDTH           = 24        , 
@@ -49,7 +53,7 @@ parameter
     C_M_AXI_ADDR_WIDTH      = 32        ,
     C_M_AXI_DATA_WIDTH      = 128       ,
     C_COEF_DATA             = 8*16*32   , 
-    C_BIAS_DATA             = 32        , 
+    C_BIAS_WIDTH            = 32        , 
     C_LBIAS_WIDTH           = 32 * 16   ,
     C_RAM_ADDR_WIDTH        = 9         ,
     C_RAM_DATA_WIDTH        = 128       
@@ -79,6 +83,10 @@ input       [    C_CNV_CH_WIDTH-1:0]I_opara_co          ,
 input       [    C_CNV_CH_WIDTH-1:0]I_ipara_ci          ,
 input       [       C_DIM_WIDTH-1:0]I_ipara_width       ,
 input       [       C_DIM_WIDTH-1:0]I_ipara_height      ,
+input       [       C_QM0_WIDTH-1:0]I_qm0               ,
+input       [        C_QN_WIDTH-1:0]I_qn                ,
+input       [       C_QZ2_WIDTH-1:0]I_qz2               ,
+input       [       C_QZ3_WIDTH-1:0]I_qz3               ,
 // inter mem bus 
 output      [  C_RAM_ADDR_WIDTH-1:0]O_craddr            ,        
 input       [       C_COEF_DATA-1:0]I_crdata            ,
@@ -168,7 +176,6 @@ wire         [  C_LQOBUF_WIDTH-1  :0]S_qordata1                     ;
 wire         [  C_RAM_ADDR_WIDTH-1:0]S_oraddr                       ;//
 wire         [     C_LOBUF_WIDTH-1:0]S_ordata0                      ;
 wire         [     C_LOBUF_WIDTH-1:0]S_ordata1                      ;
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // initial variable
@@ -423,7 +430,7 @@ process_element #(
     .C_M_AXI_LEN_WIDTH      (C_M_AXI_LEN_WIDTH      ),
     .C_M_AXI_ADDR_WIDTH     (C_M_AXI_ADDR_WIDTH     ),
     .C_M_AXI_DATA_WIDTH     (C_M_AXI_DATA_WIDTH     ),
-    .C_COEF_DATA_WIDTH      (C_COEF_DATA            ), 
+    .C_LCOEF_WIDTH          (C_COEF_DATA            ), 
     .C_OBUF_WIDTH           (C_OBUF_WIDTH           ),
     .C_LOBUF_WIDTH          (C_LOBUF_WIDTH          ), 
     .C_RAM_ADDR_WIDTH       (C_RAM_ADDR_WIDTH       ),
@@ -460,9 +467,9 @@ u_process_element(
 // test_msw 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// always @(posedge I_clk)begin
-//     S_fobase_addr   <= I_base_addr + I_opara_addr_img_out    ;
-// end
+always @(posedge I_clk)begin
+    S_fobase_addr   <= I_base_addr + I_opara_addr_img_out    ;
+end
 
 // test_msw #(
 //     .C_MEM_STYLE        (C_MEM_STYLE         ),
@@ -509,7 +516,80 @@ u_process_element(
 //     .I_maxi_bvalid      (I_fomaxi_bvalid     ),
 //     .O_maxi_bready      (O_fomaxi_bready     )    
 // );
+main_post #(
+    .C_MEM_STYLE            (C_MEM_STYLE            ),
+    .C_POWER_OF_1ADOTS      (C_POWER_OF_1ADOTS      ),
+    .C_POWER_OF_PECI        (C_POWER_OF_PECI        ),
+    .C_POWER_OF_PECO        (C_POWER_OF_PECO        ),
+    .C_POWER_OF_PEPIX       (C_POWER_OF_PEPIX       ),
+    .C_POWER_OF_PECODIV     (C_POWER_OF_PECODIV     ),
+    .C_POWER_OF_RDBPIX      (C_POWER_OF_RDBPIX      ), 
+    .C_PEPIX                (C_PEPIX                ),
+    .C_SUBLAYERS_WIDTH      (C_SUBLAYERS_WIDTH      ), 
+    .C_QM0_WIDTH            (C_QM0_WIDTH            ),   
+    .C_QN_WIDTH             (C_QN_WIDTH             ),
+    .C_QZ2_WIDTH            (C_QZ2_WIDTH            ),
+    .C_QZ3_WIDTH            (C_QZ3_WIDTH            ),
+    .C_DATA_WIDTH           (C_DATA_WIDTH           ),
+    .C_QIBUF_WIDTH          (C_QIBUF_WIDTH          ),
+    .C_QOBUF_WIDTH          (C_QOBUF_WIDTH          ),
+    .C_LQIBUF_WIDTH         (C_LQIBUF_WIDTH         ),       
+    .C_CNV_K_WIDTH          (C_CNV_K_WIDTH          ),
+    .C_CNV_CH_WIDTH         (C_CNV_CH_WIDTH         ),
+    .C_DIM_WIDTH            (C_DIM_WIDTH            ),
+    .C_M_AXI_LEN_WIDTH      (C_M_AXI_LEN_WIDTH      ),
+    .C_M_AXI_ADDR_WIDTH     (C_M_AXI_ADDR_WIDTH     ),
+    .C_M_AXI_DATA_WIDTH     (C_M_AXI_DATA_WIDTH     ),
+    .C_COEF_DATA            (C_COEF_DATA            ), 
+    .C_BIAS_WIDTH           (C_BIAS_WIDTH           ), 
+    .C_LQOBUF_WIDTH         (C_LQOBUF_WIDTH         ),
+    .C_OBUF_WIDTH           (C_OBUF_WIDTH           ), 
+    .C_LOBUF_WIDTH          (C_LOBUF_WIDTH          ),
+    .C_LBIAS_WIDTH          (C_LBIAS_WIDTH          ),
+    .C_RAM_ADDR_WIDTH       (C_RAM_ADDR_WIDTH       ),
+    .C_RAM_DATA_WIDTH       (C_RAM_DATA_WIDTH       ), 
+    .C_RAM_LDATA_WIDTH      (C_RAM_LDATA_WIDTH      ))
+u_main_post(
+    .I_clk                  (I_clk                  ),
+    .I_rst                  (I_rst                  ),
+    .I_allap_start          (I_ap_start             ),
+    .I_ap_start             (S_mpap_start           ),
+    .O_ap_done              (S_mpap_done            ),
+    .I_fc_en                (1'b0                   ),
+    .I_cnv_en               (I_cnv_en               ),
+    .I_pool_en              (I_pool_en              ),
+    .I_sublayer_num         (I_sublayer_num         ), 
+    .I_sublayer_seq         (I_sublayer_seq         ), 
+    .I_posthaddr            (S_posthaddr            ), 
+    .I_opara_width          (I_opara_width          ),
+    .I_opara_co             (I_opara_co             ),
+    .I_qm0                  (I_qm0                  ),
+    .I_qn                   (I_qn                   ),
+    .I_qz2                  (I_qz2                  ),
+    .I_qz3                  (I_qz3                  ),
+    .O_qoraddr              (S_qoraddr              ),
+    .I_qordata0             (S_qordata0             ), 
+    .I_qordata1             (S_qordata1             ), 
+    .O_oraddr               (S_oraddr               ),//dly=3
+    .I_ordata0              (S_ordata0              ),//dly=6,
+    .I_ordata1              (S_ordata1              ),
+    .O_braddr               (O_braddr               ),//dly=1       
+    .I_brdata               (I_brdata               ),//dly=3
+    .I_base_addr            (S_fobase_addr          ),
+    .O_maxi_awlen           (O_fomaxi_awlen         ),
+    .I_maxi_awready         (I_fomaxi_awready       ),   
+    .O_maxi_awvalid         (O_fomaxi_awvalid       ),
+    .O_maxi_awaddr          (O_fomaxi_awaddr        ),
+    .I_maxi_wready          (I_fomaxi_wready        ),
+    .O_maxi_wvalid          (O_fomaxi_wvalid        ),
+    .O_maxi_wdata           (O_fomaxi_wdata         ),       
+    .I_maxi_bvalid          (I_fomaxi_bvalid        ),
+    .O_maxi_bready          (O_fomaxi_bready        )    
+);
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// process_qbuf 
+////////////////////////////////////////////////////////////////////////////////////////////////////
 process_qbuf #(
     .C_MEM_STYLE         (C_MEM_STYLE          ),
     .C_POWER_OF_1ADOTS   (C_POWER_OF_1ADOTS    ),

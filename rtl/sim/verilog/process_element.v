@@ -49,7 +49,7 @@ parameter
     C_M_AXI_LEN_WIDTH       = 32        ,
     C_M_AXI_ADDR_WIDTH      = 32        ,
     C_M_AXI_DATA_WIDTH      = 128       ,
-    C_COEF_DATA             = 8*16*32   , 
+    C_LCOEF_WIDTH           = 8*16*32   , 
     C_OBUF_WIDTH            = 24        ,
     C_LOBUF_WIDTH           = 8*32*24   ,
     C_RAM_ADDR_WIDTH        = 9         ,
@@ -69,7 +69,7 @@ input       [C_RAM_LDATA_WIDTH-1 :0]I_srdata0           ,//dly=6
 input       [C_RAM_LDATA_WIDTH-1 :0]I_srdata1           , 
 //cbuf,coefficient as weight
 output      [  C_RAM_ADDR_WIDTH-1:0]O_craddr            ,//dly=4 
-input       [ C_COEF_DATA_WIDTH-1:0]I_crdata            ,//dly=7
+input       [     C_LCOEF_WIDTH-1:0]I_crdata            ,//dly=7
 //obuf
 input       [  C_RAM_ADDR_WIDTH-1:0]I_oraddr            ,//
 output      [     C_LOBUF_WIDTH-1:0]O_ordata0           ,
@@ -588,9 +588,9 @@ generate
                     .O_rdata1       (SC_ordata1[p_idx][co_idx]  )
                 );
                 assign O_ordata0[(p_idx*C_PECO+co_idx+1)*C_OBUF_WIDTH-1:
-                                 (p_idx*C_PECO+co_idx  )*C_OBUF_WIDTH   )] = SC_ordata0[p_idx][co_idx];
+                                 (p_idx*C_PECO+co_idx  )*C_OBUF_WIDTH    ] = SC_ordata0[p_idx][co_idx];
                 assign O_ordata1[(p_idx*C_PECO+co_idx+1)*C_OBUF_WIDTH-1:
-                                 (p_idx*C_PECO+co_idx  )*C_OBUF_WIDTH   )] = SC_ordata1[p_idx][co_idx];
+                                 (p_idx*C_PECO+co_idx  )*C_OBUF_WIDTH    ] = SC_ordata1[p_idx][co_idx];
             end
         end
     end

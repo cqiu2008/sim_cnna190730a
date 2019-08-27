@@ -42,7 +42,7 @@ parameter
     C_M_AXI_ADDR_WIDTH      = 32        ,
     C_M_AXI_DATA_WIDTH      = 128       ,
     C_COEF_DATA             = 8*16*32   , 
-    C_BIAS_DATA             = 32        , 
+    C_BIAS_WIDTH            = 32        , 
     C_LBIAS_WIDTH           = 32 * 16   , 
     C_RAM_ADDR_WIDTH        = 9         ,
     C_RAM_DATA_WIDTH        = 128       

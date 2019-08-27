@@ -46,7 +46,7 @@ input                               I_dv_pre4       ,//dly=0
 input       [C_ISIZE-1           :0]I_din           ,
 input                               I_dven          ,
 input       [C_ASIZE-1           :0]I_raddr         ,
-output reg  [C_DSIZE-1           :0]O_rdata0             
+output reg  [C_DSIZE-1           :0]O_rdata0        ,       
 output reg  [C_DSIZE-1           :0]O_rdata1             
 );
 
