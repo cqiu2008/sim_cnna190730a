@@ -184,7 +184,7 @@ wire         [     C_LOBUF_WIDTH-1:0]S_ordata1                      ;
 ceil_power_of_2 #(
     .C_DIN_WIDTH    (C_CNV_CH_WIDTH     ),
     .C_POWER2_NUM   (C_POWER_OF_1ADOTS  ))
-U0_next_co_group_peco(
+u_next_co_group_peco(
     .I_din (I_ipara_ci          ),
     .O_dout(S_ipara_ci_group    )   
 );
@@ -253,11 +253,10 @@ main_cnt_ctrl #(
     .C_CNV_K_WIDTH      (C_CNV_K_WIDTH      ),
     .C_CNV_CH_WIDTH     (C_CNV_CH_WIDTH     ),
     .C_DIM_WIDTH        (C_DIM_WIDTH        ))
-u0_main_cnt_ctrl (
+u_main_cnt_ctrl (
     .I_clk              (I_clk              ),
     .I_cnv_en           (I_cnv_en           ),
     .I_pool_en          (I_pool_en          ),
-    .I_mainpost_en      (S_mainpost_en      ), 
     .I_hcnt_total       (S_hcnt_total       ),
     .O_hcnt_pre         (S_hcnt_pre         ),
     .O_hcnt             (S_hcnt             ),
@@ -333,7 +332,7 @@ load_image #(
     .C_M_AXI_DATA_WIDTH   (C_M_AXI_DATA_WIDTH    ),
     .C_RAM_ADDR_WIDTH     (C_RAM_ADDR_WIDTH      ),
     .C_RAM_DATA_WIDTH     (C_RAM_DATA_WIDTH      ))
-u0_load_image(
+u_load_image(
     .I_clk                (I_clk                 ),
     .I_base_addr          (S_fibase_addr         ),
     .I_allap_start        (I_ap_start            ),
@@ -558,6 +557,7 @@ u_main_post(
     .I_fc_en                (1'b0                   ),
     .I_cnv_en               (I_cnv_en               ),
     .I_pool_en              (I_pool_en              ),
+    .I_mainpost_en          (S_mainpost_en          ), 
     .I_sublayer_num         (I_sublayer_num         ), 
     .I_sublayer_seq         (I_sublayer_seq         ), 
     .I_posthaddr            (S_posthaddr            ), 

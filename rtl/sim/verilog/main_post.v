@@ -74,6 +74,7 @@ output reg                          O_ap_done           ,
 input                               I_fc_en             ,
 input                               I_cnv_en            ,
 input                               I_pool_en           ,
+input                               I_mainpost_en       , 
 input       [ C_SUBLAYERS_WIDTH-1:0]I_sublayer_num      , 
 input       [ C_SUBLAYERS_WIDTH-1:0]I_sublayer_seq      , 
 input       [       C_DIM_WIDTH-1:0]I_posthaddr         , 
@@ -146,6 +147,8 @@ wire [   C_WOT_DIV_PEPIX-1:0]SL_wo_group                                    ;
 reg  [   C_WOT_DIV_PEPIX-1:0]SL_wo_group_1d                                 ;
 wire [       C_NCO_GROUP-1:0]SL_co_group                                    ;   
 reg  [       C_NCO_GROUP-1:0]SL_co_group_1d                                 ;   
+wire [         C_NCO_GROUP:0]SL_real_co_group                               ;   
+reg  [         C_NCO_GROUP:0]SL_real_co_group_1d                            ;   
 reg                          SL_bias_en                                     ;
 reg                          SL_sublayer_last                               ;
 wire                         SR_ndap_start                                  ;
@@ -153,6 +156,9 @@ reg                          SR_ndap_start_1d                               ;
 reg  [                   3:0]SR_ndap_start_shift                            ;
 wire [     C_COCNT_WIDTH-1:0]SC_co_cnt                                      ;
 reg                          SC_co_valid                                    ;//dly=0
+reg  [     C_COCNT_WIDTH-1:0]SL_co_loop                                     ;
+wire                         SC_ndco_valid                                  ;//dly=17
+reg                          SC_ndco_valid_1d                               ;//dly=18
 wire                         SC_co_over_flag                                ; 
 wire [       C_NCO_GROUP-1:0]SC_cog_cnt                                     ;   
 reg  [       C_NCO_GROUP-1:0]SC_cog_cnt_1d                                  ;   
@@ -180,7 +186,18 @@ reg  [      C_OBUF_WIDTH-1:0]SC_ipbuf[0:C_PECO-1]                           ;
 reg  [    C_LQOBUF_WIDTH-1:0]SC_qordata                                     ; 
 reg  [     C_QOBUF_WIDTH-1:0]SC_qordata_split                               ; 
 reg  [        C_QN_WIDTH-1:0]SL_half_qn                                     ;
+reg                          SL_qn_more0                                    ;
 reg  [        C_PRODUCTC-1:0]SC_bdata_m0[0:C_1ADOTS-1]                      ;//dly=11
+reg  [        C_PRODUCTC-1:0]SC_bdata_m0_s1a[0:C_1ADOTS-1]                  ;//dly=12
+reg  [        C_PRODUCTC-1:0]SC_bdata_m0_s2a[0:C_1ADOTS-1]                  ;//dly=13
+reg  [        C_PRODUCTC-1:0]SC_bdata_m0_s1b[0:C_1ADOTS-1]                  ;//dly=12
+reg  [        C_PRODUCTC-1:0]SC_bdata_m0_s2b[0:C_1ADOTS-1]                  ;//dly=13
+reg  [        C_PRODUCTC-1:0]SC_bdata_m0_s3[0:C_1ADOTS-1]                   ;//dly=14
+reg  [        C_PRODUCTC-1:0]SC_adata_pre[0:C_1ADOTS-1]                     ;//dly=15
+reg  [        C_PRODUCTC-1:0]SC_adata_relu[0:C_1ADOTS-1]                    ;//dly=16
+reg  [      C_DATA_WIDTH-1:0]SC_active_data[0:C_1ADOTS-1]                   ;//dly=17
+wire [C_M_AXI_DATA_WIDTH-1:0]SC_iemem                                       ;
+//reg  [        C_PRODUCTC-1:0]SC_bdata_m0_s2b[0:C_1ADOTS-1]                  ;//dly=13
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -213,10 +230,30 @@ always @(posedge I_clk)begin
     SL_co_group_1d <= SL_co_group;
 end
 
+// calculate SL_real_co_group_1d
+ceil_power_of_2 #(
+    .C_DIN_WIDTH    (C_CNV_CH_WIDTH     ),
+    .C_POWER2_NUM   (C_POWER_OF_1ADOTS  ))
+u_real_co_group(
+    .I_din (I_opara_co          ),
+    .O_dout(SL_real_co_group    )   
+);
+
+always @(posedge I_clk)begin
+    SL_real_co_group_1d <= SL_real_co_group                                             ;
+    SL_co_loop  <= SL_real_co_group_1d > {{(C_NCO_GROUP){1'b0}},1'b1} ? 2'b10 : 2'b01   ;
+end
+
+
 // calculate SL_bias_en
 always @(posedge I_clk)begin
     SL_sublayer_last <= I_sublayer_num == (I_sublayer_seq + {{(C_SUBLAYERS_WIDTH-1){1'b0}},1'b1});
     SL_bias_en <= I_cnv_en || (I_fc_en && SL_sublayer_last) ;
+end
+
+// calculate SL_qn_more0
+always @(posedge I_clk)begin
+    SL_qn_more0 <= $signed(I_qn)>0 ? 1'b1: 1'b0;
 end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -343,11 +380,33 @@ generate
         for(co_idx=0;co_idx<C_1ADOTS;co_idx=co_idx+1)begin:co
 
             always @(posedge I_clk)begin
-                SC_bias[co_idx]      <= I_brdata[(co_idx+1)*C_BIAS_WIDTH-1:co_idx*C_BIAS_WIDTH]     ;
-                SC_bias_1d[co_idx]   <= SC_bias[co_idx]                                             ; 
-                SC_bias_2d[co_idx]   <= SC_bias_1d[co_idx]                                          ; 
-                SC_bdata[co_idx]     <= SC_ipbuf[co_idx] + SC_bias_tmp[co_idx]                      ;
+                SC_bias[co_idx]             <= I_brdata[(co_idx+1)*C_BIAS_WIDTH-1:co_idx*C_BIAS_WIDTH]          ;
+                SC_bias_1d[co_idx]          <= SC_bias[co_idx]                                                  ; 
+                SC_bias_2d[co_idx]          <= SC_bias_1d[co_idx]                                               ; 
+                SC_bdata[co_idx]            <= SC_ipbuf[co_idx] + SC_bias_tmp[co_idx]                           ;
+                SC_bdata_m0_s1a[co_idx]     <= SC_bdata_m0[co_idx] + SL_half_qn                                 ; 
+                SC_bdata_m0_s2a[co_idx]     <= SC_bdata_m0_s1a[co_idx] >> I_qn                                     ; 
+                //SC_bdata_m0_s3a[co_idx]     <= SC_bdata_s2a[co_idx] + I_qz3                                     ;
+                SC_bdata_m0_s1b[co_idx]     <= SC_bdata_m0[co_idx] << ($signed(-I_qn)-1)                        ;
+                SC_bdata_m0_s2b[co_idx]     <= {SC_bdata_m0_s1b[co_idx] + {{(C_PRODUCTC-1){1'b0}},1'b1}}>>1     ; 
+                SC_bdata_m0_s3[co_idx]      <= SL_qn_more0 ? SC_bdata_m0_s2a[co_idx] : SC_bdata_m0_s2b[co_idx]  ;
+                SC_adata_pre[co_idx]        <= SC_bdata_m0_s3[co_idx] + I_qz3                                   ;
+                SC_adata_relu[co_idx]       <= SC_adata_pre[co_idx] > 0 ? SC_adata_pre[co_idx] : 0              ; 
             end
+
+            always @(posedge I_clk)begin
+                if(SL_bias_en)begin
+                    SC_active_data[co_idx]  <= SC_adata_relu[co_idx][C_DATA_WIDTH-1:0]      ;//dly=17
+                end
+                else if(I_pool_en)begin
+                    SC_active_data[co_idx]  <= SC_ipbuf[co_idx][C_DATA_WIDTH-1:0]          ; 
+                end
+                else begin
+                    SC_active_data[co_idx]  <= {C_DATA_WIDTH{1'b0}}                         ;
+                end
+            end
+
+            assign SC_iemem[(co_idx+1)*C_DATA_WIDTH-1 : co_idx*C_DATA_WIDTH ] = SC_active_data[co_idx];
 
             dsp_unit #(
                 .C_IN0          (C_QZ2_WIDTH                                                ),
@@ -398,17 +457,28 @@ u_start_dly(
     .O_dout    (SR_ndap_start   )
 );
 
+dly #(
+    .C_DATA_WIDTH   (1                  ), 
+    .C_DLY_NUM      (17                 ))
+u_ndco_valid(
+    .I_clk          (I_clk              ),
+    .I_din          (SC_co_valid        ),//dly=0
+    .O_dout         (SC_ndco_valid      ) //dly=17
+);
+
 always @(posedge I_clk)begin
-    SR_ndap_start_1d    <= SR_ndap_start                                ;
-    SR_ndap_start_shift <={SR_ndap_start_shift[2:0],(SR_ndap_start)}    ;
+    SC_ndco_valid_1d <= SC_ndco_valid    ;
 end
 
 always @(posedge I_clk)begin
-    //O_ap_done           <= ((~SR_ndap_start_1d) && SR_ndap_start && (~SR_hindex_suite)) || (SC_mdcig_valid_2d && (~SC_mdcig_valid_1d)) ;
+    SR_ndap_start_1d    <= SR_ndap_start                                                ;
+    SR_ndap_start_shift <={SR_ndap_start_shift[2:0],(SR_ndap_start && I_mainpost_en)}   ;
 end
 
-
-
+always @(posedge I_clk)begin
+    O_ap_done <= (SR_ndap_start && (~SR_ndap_start_1d) && (~I_mainpost_en) ) 
+                || SC_ndco_valid_1d && (~SC_ndco_valid)                  ;
+end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // loop cnt ctrl 
@@ -443,7 +513,7 @@ u_loop1_co_cnt (
 .I_cnt_en           (SR_ndap_start_shift[0] ),
 .I_lowest_cnt_valid (SC_co_valid            ),
 .I_cnt_valid        (SC_co_valid            ),
-.I_cnt_upper        (2'b10                  ),
+.I_cnt_upper        (SL_co_loop             ),
 .O_over_flag        (SC_co_over_flag        ),
 .O_cnt              (SC_co_cnt              )//dly=0
 );
@@ -483,6 +553,7 @@ u_loop4_wog_cnt(
 .O_over_flag        (SC_wog_over_flag       ),
 .O_cnt              (SC_wog_cnt             )//dly=0
 );
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // read data from qibuf 
