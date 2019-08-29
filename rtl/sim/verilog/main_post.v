@@ -166,6 +166,8 @@ reg  [       C_NCO_GROUP-1:0]SC_cog_cnt_2d                                  ;
 wire                         SC_cog_valid                                   ;
 wire                         SC_cog_over_flag                               ; 
 wire [      C_PCNT_WIDTH-1:0]SC_pix_cnt                                     ;   
+wire [      C_PCNT_WIDTH-1:0]SC_mdpix_cnt                                   ;//dly=4
+wire [      C_PCNT_WIDTH-1:0]SC_ndpix_cnt                                   ;//dly=7  
 wire                         SC_pix_valid                                   ;
 wire                         SC_pix_over_flag                               ; 
 wire [   C_WOT_DIV_PEPIX-1:0]SC_wog_cnt                                     ;
@@ -180,10 +182,10 @@ reg  [      C_BIAS_WIDTH-1:0]SC_bdata[0:C_1ADOTS-1]                         ;//d
 //wire [  C_RAM_ADDR_WIDTH-1:0]SC_depth_ipbuf_comb                            ; 
 wire [  C_RAM_ADDR_WIDTH-1:0]SC_depth_ipbuf                                 ; 
 reg  [     C_LOBUF_WIDTH-1:0]SC_ordata                                      ;//dly=7
-wire [      C_OBUF_WIDTH-1:0]SC_ipbuf_array[0:C_PEPIX-1][0:C_PECO-1]        ; 
+wire [      C_OBUF_WIDTH-1:0]SC_ipbuf_array[0:C_PEPIX-1][0:C_PECO-1]        ;//dly=7
 reg  [      C_OBUF_WIDTH-1:0]SC_ipbuf[0:C_PECO-1]                           ; 
 
-reg  [    C_LQOBUF_WIDTH-1:0]SC_qordata                                     ; 
+reg  [    C_LQOBUF_WIDTH-1:0]SC_qordata                                     ;//dly=4
 reg  [     C_QOBUF_WIDTH-1:0]SC_qordata_split                               ; 
 reg  [        C_QN_WIDTH-1:0]SL_half_qn                                     ;
 reg                          SL_qn_more0                                    ;
@@ -324,7 +326,7 @@ generate
     begin:ipbuf
         for(gco_idx=0;gco_idx<C_PECO;gco_idx=gco_idx+1)begin:co
             always @(*)begin
-                case(SC_pix_cnt[2:0])
+                case(SC_ndpix_cnt[2:0])//dly=7
                 3'b000: SC_ipbuf[gco_idx] = SC_ipbuf_array[0][gco_idx];
                 3'b001: SC_ipbuf[gco_idx] = SC_ipbuf_array[1][gco_idx];
                 3'b010: SC_ipbuf[gco_idx] = SC_ipbuf_array[2][gco_idx];
@@ -356,8 +358,25 @@ always @(posedge I_clk)begin
     SC_qordata <= I_posthaddr[0] ? I_qordata1 : I_qordata0 ;//dly=4
 end
 
+dly #(
+    .C_DATA_WIDTH   (C_PCNT_WIDTH   ), 
+    .C_DLY_NUM      (4              ))
+u_mdpix_cnt(
+    .I_clk     (I_clk               ),
+    .I_din     (SC_pix_cnt          ),
+    .O_dout    (SC_mdpix_cnt        ) //dly=4
+);
+dly #(
+    .C_DATA_WIDTH   (C_PCNT_WIDTH   ), 
+    .C_DLY_NUM      (3              ))
+u_ndpix_cnt(
+    .I_clk     (I_clk               ),
+    .I_din     (SC_mdpix_cnt        ),
+    .O_dout    (SC_ndpix_cnt        ) //dly=7
+);
+
 always @(*)begin
-    case(SC_pix_cnt[2:0])
+    case(SC_mdpix_cnt[2:0])
     3'b000: SC_qordata_split = SC_qordata[C_QOBUF_WIDTH-1  :0*C_QOBUF_WIDTH];
     3'b001: SC_qordata_split = SC_qordata[C_QOBUF_WIDTH*2-1:1*C_QOBUF_WIDTH];
     3'b010: SC_qordata_split = SC_qordata[C_QOBUF_WIDTH*3-1:2*C_QOBUF_WIDTH];
@@ -383,7 +402,7 @@ generate
                 SC_bias[co_idx]             <= I_brdata[(co_idx+1)*C_BIAS_WIDTH-1:co_idx*C_BIAS_WIDTH]          ;
                 SC_bias_1d[co_idx]          <= SC_bias[co_idx]                                                  ; 
                 SC_bias_2d[co_idx]          <= SC_bias_1d[co_idx]                                               ; 
-                SC_bdata[co_idx]            <= SC_ipbuf[co_idx] + SC_bias_tmp[co_idx]                           ;
+                SC_bdata[co_idx]            <= $signed(SC_ipbuf[co_idx]) - $signed(SC_bias_tmp[co_idx])         ;
                 SC_bdata_m0_s1a[co_idx]     <= SC_bdata_m0[co_idx] + SL_half_qn                                 ; 
                 SC_bdata_m0_s2a[co_idx]     <= SC_bdata_m0_s1a[co_idx] >> I_qn                                     ; 
                 //SC_bdata_m0_s3a[co_idx]     <= SC_bdata_s2a[co_idx] + I_qz3                                     ;
@@ -391,7 +410,7 @@ generate
                 SC_bdata_m0_s2b[co_idx]     <= {SC_bdata_m0_s1b[co_idx] + {{(C_PRODUCTC-1){1'b0}},1'b1}}>>1     ; 
                 SC_bdata_m0_s3[co_idx]      <= SL_qn_more0 ? SC_bdata_m0_s2a[co_idx] : SC_bdata_m0_s2b[co_idx]  ;
                 SC_adata_pre[co_idx]        <= SC_bdata_m0_s3[co_idx] + I_qz3                                   ;
-                SC_adata_relu[co_idx]       <= SC_adata_pre[co_idx] > 0 ? SC_adata_pre[co_idx] : 0              ; 
+                SC_adata_relu[co_idx]       <= $signed(SC_adata_pre[co_idx]) > 0 ? SC_adata_pre[co_idx] : 0     ; 
             end
 
             always @(posedge I_clk)begin
@@ -441,7 +460,8 @@ generate
 endgenerate
 
 always @(posedge I_clk)begin
-    SL_half_qn <= {1'b0,I_qn[C_QN_WIDTH-1:1]}   ;
+    //SL_half_qn <= {1'b1,{(I_qn-{{(C_QN_WIDTH-1){1'b0}},1'b1}){1'b0}}};
+    SL_half_qn <= {1'b1,15'd0};
 end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

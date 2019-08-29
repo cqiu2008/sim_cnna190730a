@@ -105,7 +105,8 @@ reg                          SR_kh_or_hindex_equal0                         ;
 reg                          SC_cig_cnt_equal0                              ;
 reg                          SC_kw_cnt_equal0                               ;
 reg                          SC_kw_and_cig_equal0                           ;
-reg                          SC_noadd_qodout                                ;
+reg                          SC_first_flag                                  ;
+wire                         SC_ndfirst_flag                                ;
 wire                         SR_ndap_start                                  ;
 reg                          SR_ndap_start_1d                               ;
 reg  [                   3:0]SR_ndap_start_shift                            ;
@@ -120,7 +121,6 @@ wire [       C_NCH_GROUP-1:0]SL_ci_group                                    ;
 reg  [       C_NCH_GROUP-1:0]SL_ci_group_1d                                 ;   
 reg                          SC_cig_valid                                   ;
 reg                          SC_cig_valid_1d                                ;
-wire                         SC_first_flag                                  ;
 wire                         SC_cig_over_flag                               ; 
 wire [     C_CNV_K_WIDTH-1:0]SC_kw_cnt                                      ;
 wire                         SC_kw_valid                                    ;
@@ -138,7 +138,12 @@ reg  [C_RAM_ADDR_WIDTH-1  :0]SC_depth_s1b                                   ;
 reg  [C_RAM_ADDR_WIDTH-1  :0]SC_depth_s2                                    ;
 reg  [C_RAM_ADDR_WIDTH-1  :0]SC_depth_s3                                    ;
 reg  [  C_LQIBUF_WIDTH-1  :0]SC_qirdata                                     ;
-wire                         SC_dv                                          ;
+wire                         SC_mdcig_valid                                 ;//dly=6
+reg                          SC_mdcig_valid_1d                              ;//dly=7
+reg                          SC_mdcig_valid_2d                              ;//dly=
+reg  [                   3:0]SC_mdcig_dlycnt = 4'hf                         ;
+reg                          SC_ram_dven                                    ;
+reg                          SC_mdcig_dlyen                                 ;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // initial layer variable
@@ -152,7 +157,7 @@ always @(posedge I_clk)begin
     SC_cig_cnt_equal0       <= (SC_cig_cnt == {C_NCH_GROUP{1'b0}})              ;//dly=1 
     SC_kw_cnt_equal0        <= (SC_kw_cnt == {C_CNV_K_WIDTH{1'b0}})             ; 
     SC_kw_and_cig_equal0    <=  SC_cig_cnt_equal0 && SC_kw_cnt_equal0           ;//dly=2 
-    SC_noadd_qodout         <=  SC_kw_and_cig_equal0 && SR_kh_or_hindex_equal0  ;//dly=3
+    SC_first_flag           <=  SR_kh_or_hindex_equal0                          ;//dly=3
 end
 
 // calculate SL_wo_group    ;
@@ -334,23 +339,47 @@ assign SR_qibuf0_en  = ~I_hcnt_odd   ;
 assign SR_qobuf0_en  = I_enwr_obuf0  ;
 assign SR_qobuf1_en  = ~I_enwr_obuf0 ;
 
-dly #(
-    .C_DATA_WIDTH   (1          ), 
-    .C_DLY_NUM      (7          ))
-u_dv_pre4(
-    .I_clk     (I_clk           ),
-    .I_din     (SC_cig_valid    ),
-    .O_dout    (SC_dv           )
-);
 
 dly #(
     .C_DATA_WIDTH   (1                  ), 
     .C_DLY_NUM      (4                  ))
 u_first_flag(
     .I_clk          (I_clk              ),
-    .I_din          (SC_noadd_qodout    ),//dly=3
-    .O_dout         (SC_first_flag      ) //dly=7
+    .I_din          (SC_first_flag      ),//dly=3
+    .O_dout         (SC_ndfirst_flag    ) //dly=7
 );
+
+dly #(
+    .C_DATA_WIDTH   (1          ), 
+    .C_DLY_NUM      (6          ))
+u_dv_pre(
+    .I_clk     (I_clk           ),
+    .I_din     (SC_cig_valid    ),
+    .O_dout    (SC_mdcig_valid  ) //dly=6
+);
+
+always @(posedge I_clk)begin
+    SC_mdcig_valid_1d <= SC_mdcig_valid ;
+end
+
+always @(posedge I_clk)begin
+    if( (~SC_mdcig_valid) && SC_mdcig_valid_1d)begin
+        SC_mdcig_dlycnt <= 4'd0                     ;
+        SC_mdcig_dlyen  <= 1'b1                     ; 
+    end
+    else if(&SC_mdcig_dlycnt)begin
+        SC_mdcig_dlycnt <= SC_mdcig_dlycnt          ;
+        SC_mdcig_dlyen  <= 1'b0                     ; 
+    end
+    else begin
+        SC_mdcig_dlycnt <= 4'd1 + SC_mdcig_dlycnt   ;
+        SC_mdcig_dlyen  <= 1'b1                     ; 
+    end
+end
+
+always @(posedge I_clk)begin
+    SC_ram_dven <= SC_mdcig_valid | SC_mdcig_valid_1d | SC_mdcig_dlyen  ;
+end
 
 genvar idx;
 generate
@@ -366,10 +395,10 @@ generate
                 .I_clk          (I_clk                                                  ),
                 .I_wram0_en     (SR_qobuf0_en                                           ),
                 .I_cnt_boundary (SL_kernel_ci_group                                     ),
-                .I_first_flag   (SC_first_flag                                          ),
-                .I_din_valid    (SC_dv                                                  ),//dly=7
+                .I_first_flag   (SC_ndfirst_flag                                        ),
+                .I_din_valid    (SC_mdcig_valid_1d                                      ),//dly=7
                 .I_din          (SC_qirdata[(idx+1)*C_QIBUF_WIDTH-1:idx*C_QIBUF_WIDTH]  ),//dly=7
-                .I_dven         (I_ap_start                                             ),
+                .I_dven         (SC_ram_dven                                            ),
                 .I_raddr        (I_qoraddr                                              ),
                 .O_rdata0       (O_qordata0[(idx+1)*C_QOBUF_WIDTH-1:idx*C_QOBUF_WIDTH]  ),
                 .O_rdata1       (O_qordata1[(idx+1)*C_QOBUF_WIDTH-1:idx*C_QOBUF_WIDTH]  ) 

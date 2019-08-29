@@ -1477,23 +1477,39 @@ endtask
 `endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// write obuf sim 
+// read active data sim 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-wire wrsim[0:7][0:31];
-wire [31:0]wdatasim[0:7][0:31];
-genvar ap,ac;
+parameter C_POWER_OF_PECO  = 5                                      ; 
+parameter C_CNV_CH_WIDTH   = 8                                      ; 
+parameter C_NCO_GROUP      = C_CNV_CH_WIDTH - C_POWER_OF_PECO + 1   ;
+parameter C_OBUF_WIDTH     = 24                                     ; 
+parameter C_PECO           = {1'b1,{C_POWER_OF_PECO{1'b0}}}         ; 
+parameter C_DATA_WIDTH     = 8                                      ;
+parameter C_1ADOTS         = 16                                     ;
+
+wire co_valid_sim;
+assign co_valid_sim = AESL_inst_cnna.u_main_process.u_main_post.SC_co_valid;
+wire co_valid_sim_nd;
+dly #(
+    .C_DATA_WIDTH   (1          ), 
+    .C_DLY_NUM      (17         ))
+u_start_dly(
+    .I_clk     (AESL_clock      ),
+    .I_din     (co_valid_sim    ),
+    .O_dout    (co_valid_sim_nd )
+);
+
+wire [      C_DATA_WIDTH-1:0]active_data_sim[0:C_1ADOTS-1] ;//dly=17
+
+genvar ac;
 generate
     begin
-        for(ap=0;ap<8;ap=ap+1)begin
-            for(ac=0;ac<32;ac=ac+1)begin
-               assign wrsim[ap][ac]    = AESL_inst_cnna.u_main_process.u_process_element.obuf.pix[ap].co[ac].u_aram.u_sum_ram.S_wr0
-                                | AESL_inst_cnna.u_main_process.u_process_element.obuf.pix[ap].co[ac].u_aram.u_sum_ram.S_wr1;
-
-               assign wdatasim[ap][ac] = AESL_inst_cnna.u_main_process.u_process_element.obuf.pix[ap].co[ac].u_aram.u_sum_ram.S_wdata;
-            end
+        for(ac=0;ac<C_1ADOTS;ac=ac+1)begin
+            assign active_data_sim[ac] = AESL_inst_cnna.u_main_process.u_main_post.SC_active_data[ac];
         end
     end
 endgenerate
+
 
 initial begin
     integer fp;
@@ -1502,21 +1518,115 @@ initial begin
     while(1)begin
         @(negedge AESL_clock);
         #1ns;
-        for(p=0;p<8;p=p+1)begin
-            for(c=0;c<32;c=c+1)begin
-                if(wrsim[p][c])begin
-                    $fwrite(fp, "%08x ",wdatasim[p][c]);
-                    if(c==31)begin
-                        $fwrite(fp, "\n");
-                    end
+        if(co_valid_sim_nd)begin
+            for(c=0;c<C_1ADOTS;c=c+1)begin
+                $fwrite(fp, "%08x ",active_data_sim[c]);
+                if(c==C_1ADOTS-1)begin
+                    $fwrite(fp, "\n");
                 end
-                //$fdisplay(fp, "%8x ",AESL_inst_cnna.u_main_process.u_process_element.compute.pix[p].cog[c].u_macc2d.S_psim);
             end
         end
-            //AESL_inst_cnna.u_main_process.u_process_element.compute.pix[0].cog[0].u_macc2d.a1.ci[0].u_dsp_unit.O_product
     end
     $fclose(fp);
 end
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// read ipbuf sim 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// parameter C_POWER_OF_PECO  = 5                                     ; 
+// parameter C_CNV_CH_WIDTH   = 8                                     ; 
+// parameter C_NCO_GROUP      = C_CNV_CH_WIDTH - C_POWER_OF_PECO + 1  ;
+// parameter C_OBUF_WIDTH     = 24                                    ; 
+// parameter C_PECO           = {1'b1,{C_POWER_OF_PECO{1'b0}}}        ; 
+// 
+// wire co_valid_sim;
+// assign co_valid_sim = AESL_inst_cnna.u_main_process.u_main_post.SC_co_valid;
+// wire co_valid_sim_nd;
+// dly #(
+//     .C_DATA_WIDTH   (1          ), 
+//     .C_DLY_NUM      (7          ))
+// u_start_dly(
+//     .I_clk     (AESL_clock      ),
+//     .I_din     (co_valid_sim    ),
+//     .O_dout    (co_valid_sim_nd )
+// );
+// 
+// wire [      C_OBUF_WIDTH-1:0]ipbuf_sim[0:C_PECO-1]  ; 
+// genvar ac;
+// generate
+//     begin
+//         for(ac=0;ac<C_PECO;ac=ac+1)begin
+//             assign ipbuf_sim[ac] = AESL_inst_cnna.u_main_process.u_main_post.SC_ipbuf[ac];
+//         end
+//     end
+// endgenerate
+// 
+// wire [         C_NCO_GROUP:0]real_co_group_1d_sim   ;   
+// assign real_co_group_1d_sim = AESL_inst_cnna.u_main_process.u_main_post.SL_real_co_group_1d ; 
+// 
+// 
+// initial begin
+//     integer fp;
+//     integer p,c;
+//     fp = $fopen("cnna.log", "w");
+//     while(1)begin
+//         @(negedge AESL_clock);
+//         #1ns;
+//         if(co_valid_sim_nd)begin
+//             for(c=0;c<real_co_group_1d_sim*16;c=c+1)begin
+//                 $fwrite(fp, "%08x ",ipbuf_sim[c]);
+//                 if(c==real_co_group_1d_sim*16-1)begin
+//                     $fwrite(fp, "\n");
+//                 end
+//             end
+//         end
+//     end
+//     $fclose(fp);
+// end
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// write obuf sim 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// wire wrsim[0:7][0:31];
+// wire [31:0]wdatasim[0:7][0:31];
+// genvar ap,ac;
+// generate
+//     begin
+//         for(ap=0;ap<8;ap=ap+1)begin
+//             for(ac=0;ac<32;ac=ac+1)begin
+//                assign wrsim[ap][ac]    = AESL_inst_cnna.u_main_process.u_process_element.obuf.pix[ap].co[ac].u_aram.u_sum_ram.S_wr0
+//                                 | AESL_inst_cnna.u_main_process.u_process_element.obuf.pix[ap].co[ac].u_aram.u_sum_ram.S_wr1;
+// 
+//                assign wdatasim[ap][ac] = AESL_inst_cnna.u_main_process.u_process_element.obuf.pix[ap].co[ac].u_aram.u_sum_ram.S_wdata;
+//             end
+//         end
+//     end
+// endgenerate
+// 
+// initial begin
+//     integer fp;
+//     integer p,c;
+//     fp = $fopen("cnna.log", "w");
+//     while(1)begin
+//         @(negedge AESL_clock);
+//         #1ns;
+//         for(p=0;p<8;p=p+1)begin
+//             for(c=0;c<32;c=c+1)begin
+//                 if(wrsim[p][c])begin
+//                     $fwrite(fp, "%08x ",wdatasim[p][c]);
+//                     if(c==31)begin
+//                         $fwrite(fp, "\n");
+//                     end
+//                 end
+//             end
+//         end
+//     end
+//     $fclose(fp);
+// end
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

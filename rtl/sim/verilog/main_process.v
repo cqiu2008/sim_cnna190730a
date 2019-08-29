@@ -564,7 +564,7 @@ u_main_post(
     .I_opara_width          (I_opara_width          ),
     .I_opara_co             (I_opara_co             ),
     .I_qm0                  (I_qm0                  ),
-    .I_qn                   (I_qn                   ),
+    .I_qn                   (I_qn+7                 ),
     .I_qz2                  (I_qz2                  ),
     .I_qz3                  (I_qz3                  ),
     .O_qoraddr              (S_qoraddr              ),
