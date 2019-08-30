@@ -1493,23 +1493,23 @@ assign co_valid_sim = AESL_inst_cnna.u_main_process.u_main_post.SC_co_valid;
 wire co_valid_sim_nd;
 dly #(
     .C_DATA_WIDTH   (1          ), 
-    //.C_DLY_NUM      (17         ))//active_data
-    .C_DLY_NUM      (8         ))//bdata
+    .C_DLY_NUM      (17         ))//active_data
+    //.C_DLY_NUM      (8         ))//bdata
 u_start_dly(
     .I_clk     (AESL_clock      ),
     .I_din     (co_valid_sim    ),
     .O_dout    (co_valid_sim_nd )
 );
 
-//wire [      C_DATA_WIDTH-1:0]active_data_sim[0:C_1ADOTS-1] ;//dly=17
-wire [      C_BIAS_WIDTH-1:0]bdata_sim[0:C_1ADOTS-1] ;//dly=8
+wire [      C_DATA_WIDTH-1:0]active_data_sim[0:C_1ADOTS-1] ;//dly=17
+//wire [      C_BIAS_WIDTH-1:0]bdata_sim[0:C_1ADOTS-1] ;//dly=8
 
 genvar ac;
 generate
     begin
         for(ac=0;ac<C_1ADOTS;ac=ac+1)begin
-            //assign active_data_sim[ac] = AESL_inst_cnna.u_main_process.u_main_post.SC_active_data[ac];
-            assign bdata_sim[ac] = AESL_inst_cnna.u_main_process.u_main_post.SC_bdata[ac];
+            assign active_data_sim[ac] = AESL_inst_cnna.u_main_process.u_main_post.SC_active_data[ac];
+            //assign bdata_sim[ac] = AESL_inst_cnna.u_main_process.u_main_post.SC_bdata[ac];
         end
     end
 endgenerate
@@ -1524,8 +1524,8 @@ initial begin
         #1ns;
         if(co_valid_sim_nd)begin
             for(c=0;c<C_1ADOTS;c=c+1)begin
-                //$fwrite(fp, "%08x ",active_data_sim[c]);
-                $fwrite(fp, "%08x ",bdata_sim[c]);
+                $fwrite(fp, "%08x ",active_data_sim[c]);
+                //$fwrite(fp, "%08x ",bdata_sim[c]);
                 if(c==C_1ADOTS-1)begin
                     $fwrite(fp, "\n");
                 end

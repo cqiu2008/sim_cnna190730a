@@ -199,7 +199,7 @@ reg  [      C_DATA_WIDTH-1:0]SC_active_data[0:C_1ADOTS-1]                   ;//d
 wire [C_M_AXI_DATA_WIDTH-1:0]SC_iemem                                       ;//dly=17
 reg  [C_M_AXI_DATA_WIDTH-1:0]SC_wdata                                       ;//dly=18
 reg  [  C_RAM_ADDR_WIDTH-1:0]SC_waddr                                       ;
-wire                         SC_wr                                          ;
+reg                          SC_wr                                          ;
 reg                          SC_axi_start                                   ;
 wire                         SC_axi_done                                    ;
 reg  [C_M_AXI_ADDR_WIDTH-1:0]SR_axi_base_addr                               ; 
@@ -415,15 +415,15 @@ generate
                 SC_bias_1d[co_idx]          <= SC_bias[co_idx]                                                  ; 
                 SC_bias_2d[co_idx]          <= SC_bias_1d[co_idx]                                               ; 
                 SC_bdata[co_idx]            <= $signed(SC_ipbuf[co_idx]) - $signed(SC_bias_tmp[co_idx])         ;
-                SC_bdata_m0_s1a[co_idx]     <= SC_bdata_m0[co_idx] + SL_half_qn                                 ; 
-                SC_bdata_m0_s2a[co_idx]     <= SC_bdata_m0_s1a[co_idx] >> I_qn                                     ; 
+                SC_bdata_m0_s1a[co_idx]     <= $signed(SC_bdata_m0[co_idx]) + $signed(SL_half_qn)               ; 
+                SC_bdata_m0_s2a[co_idx]     <= SC_bdata_m0_s1a[co_idx] >> I_qn                                  ; 
                 //SC_bdata_m0_s3a[co_idx]     <= SC_bdata_s2a[co_idx] + I_qz3                                     ;
                 SC_bdata_m0_s1b[co_idx]     <= SC_bdata_m0[co_idx] << ($signed(-I_qn)-1)                        ;
-                SC_bdata_m0_s2b[co_idx]     <= {SC_bdata_m0_s1b[co_idx] + {{(C_PRODUCTC-1){1'b0}},1'b1}}>>1     ; 
+                SC_bdata_m0_s2b[co_idx]     <= {$signed(SC_bdata_m0_s1b[co_idx]) + {{(C_PRODUCTC-1){1'b0}},1'b1}}>>1     ; 
                 SC_bdata_m0_s3[co_idx]      <= SL_qn_more0 ? SC_bdata_m0_s2a[co_idx] : SC_bdata_m0_s2b[co_idx]  ;
-                SC_adata_pre[co_idx]        <= SC_bdata_m0_s3[co_idx] + I_qz3                                   ;
-                //SC_adata_relu[co_idx]       <= SC_adata_pre[co_idx][8] ? 0 : SC_adata_pre[co_idx]               ; 
-                SC_adata_relu[co_idx]       <= SC_adata_pre[co_idx]               ; 
+                SC_adata_pre[co_idx]        <= $signed(SC_bdata_m0_s3[co_idx]) + $signed(I_qz3)                 ;
+                SC_adata_relu[co_idx]       <= (&SC_adata_pre[co_idx][31:8]) ? 0 : SC_adata_pre[co_idx]               ; 
+                SC_adata_relu[co_idx]       <= SC_adata_pre[co_idx]               ;//here sim is ok 
             end
 
             always @(posedge I_clk)begin
@@ -455,14 +455,14 @@ generate
             );
 
             dsp_unit #(
-                .C_IN0          (C_QM0_WIDTH                                                ),
-                .C_IN1          (C_BIAS_WIDTH                                               ),
+                .C_IN0          (C_BIAS_WIDTH                                               ),
+                .C_IN1          (C_QM0_WIDTH                                                ),
                 .C_IN2          (C_PRODUCTC                                                 ),
                 .C_OUT          (C_PRODUCTC                                                 ))
             u_bdata_m0(
                 .I_clk          (I_clk                                                      ),
-                .I_weight       (I_qm0                                                      ),
-                .I_pixel        (SC_bdata[co_idx]                                           ),//dly=8
+                .I_weight       (SC_bdata[co_idx]                                           ),//dly=8
+                .I_pixel        (I_qm0                                                      ),
                 .I_product_cas  ({C_PRODUCTC{1'b0}}                                         ),
                 .O_product_cas  (                                                           ),
                 .O_product      (SC_bdata_m0[co_idx]                                        ) //dly=11
@@ -591,7 +591,17 @@ u_loop4_wog_cnt(
 // process axi_ram 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-assign SC_wr = SC_ndco_valid_1d ;
+always @(posedge I_clk)begin
+    if(SC_ndco_valid && (~SC_ndco_valid_1d))begin
+        SC_wr <= 1'b1;
+    end
+    else if( SC_waddr == ( SL_maxi_awlen-{{(C_RAM_ADDR_WIDTH-1){1'b0}},1'b1} ) )begin
+        SC_wr <= 1'b0;
+    end
+    else begin
+        SC_wr <= SC_wr  ; 
+    end
+end
 
 always @(posedge I_clk)begin
     SC_wdata    <= SC_iemem ;
