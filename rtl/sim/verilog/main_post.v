@@ -118,7 +118,6 @@ localparam   C_1ADOTS         = {1'b1,{C_POWER_OF_1ADOTS{1'b0}}}        ;
 localparam   C_PECO           = {1'b1,{C_POWER_OF_PECO{1'b0}}}          ; 
 localparam   C_PECI           = {1'b1,{C_POWER_OF_PECI{1'b0}}}          ; 
 localparam   C_HALF_PECO      = {1'b1,{(C_POWER_OF_PECO-1){1'b0}}}      ; 
-
 localparam   C_PIX_WIDTH      = C_PECI*C_DATA_WIDTH                     ; 
 localparam   C_COE_WIDTH      = C_PECI*C_DATA_WIDTH                     ; 
 localparam   C_SUM_WIDTH      = 20                                      ; 
@@ -143,6 +142,7 @@ localparam   C_PRODUCTC       = 48                                      ;
 // (3) SC_+"xx"  name type (S_clock_xxx), means variable changed every clock 
 //        such as SC_id , ... and so on 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+
 wire [   C_WOT_DIV_PEPIX-1:0]SL_wo_group                                    ;
 reg  [   C_WOT_DIV_PEPIX-1:0]SL_wo_group_1d                                 ;
 wire [       C_NCO_GROUP-1:0]SL_co_group                                    ;   
@@ -179,14 +179,12 @@ reg  [      C_BIAS_WIDTH-1:0]SC_bias_1d[0:C_1ADOTS-1]                       ;//d
 reg  [      C_BIAS_WIDTH-1:0]SC_bias_2d[0:C_1ADOTS-1]                       ;//dly=6
 wire [      C_BIAS_WIDTH-1:0]SC_bias_tmp[0:C_1ADOTS-1]                      ;//dly=7
 reg  [      C_BIAS_WIDTH-1:0]SC_bdata[0:C_1ADOTS-1]                         ;//dly=8
-//wire [  C_RAM_ADDR_WIDTH-1:0]SC_depth_ipbuf_comb                            ; 
 wire [  C_RAM_ADDR_WIDTH-1:0]SC_depth_ipbuf                                 ; 
 reg  [     C_LOBUF_WIDTH-1:0]SC_ordata                                      ;//dly=7
 wire [      C_OBUF_WIDTH-1:0]SC_ipbuf_array[0:C_PEPIX-1][0:C_PECO-1]        ;//dly=7
 reg  [      C_OBUF_WIDTH-1:0]SC_ipbuf[0:C_PECO-1]                           ; 
-
 reg  [    C_LQOBUF_WIDTH-1:0]SC_qordata                                     ;//dly=4
-reg  [     C_QOBUF_WIDTH-1:0]SC_qordata_split                               ; 
+reg  [     C_QOBUF_WIDTH-1:0]SC_qordata_split                               ;//dly=4
 reg  [        C_QN_WIDTH-1:0]SL_half_qn                                     ;
 reg                          SL_qn_more0                                    ;
 reg  [        C_PRODUCTC-1:0]SC_bdata_m0[0:C_1ADOTS-1]                      ;//dly=11
@@ -198,8 +196,21 @@ reg  [        C_PRODUCTC-1:0]SC_bdata_m0_s3[0:C_1ADOTS-1]                   ;//d
 reg  [        C_PRODUCTC-1:0]SC_adata_pre[0:C_1ADOTS-1]                     ;//dly=15
 reg  [        C_PRODUCTC-1:0]SC_adata_relu[0:C_1ADOTS-1]                    ;//dly=16
 reg  [      C_DATA_WIDTH-1:0]SC_active_data[0:C_1ADOTS-1]                   ;//dly=17
-wire [C_M_AXI_DATA_WIDTH-1:0]SC_iemem                                       ;
-//reg  [        C_PRODUCTC-1:0]SC_bdata_m0_s2b[0:C_1ADOTS-1]                  ;//dly=13
+wire [C_M_AXI_DATA_WIDTH-1:0]SC_iemem                                       ;//dly=17
+reg  [C_M_AXI_DATA_WIDTH-1:0]SC_wdata                                       ;//dly=18
+reg  [  C_RAM_ADDR_WIDTH-1:0]SC_waddr                                       ;
+wire                         SC_wr                                          ;
+reg                          SC_axi_start                                   ;
+wire                         SC_axi_done                                    ;
+reg  [C_M_AXI_ADDR_WIDTH-1:0]SR_axi_base_addr                               ; 
+wire [  C_RAM_ADDR_WIDTH-1:0]SL_opara_width_co_group                        ;
+wire [C_M_AXI_ADDR_WIDTH-1:0]SR_ho_opara_width_co_group                     ;
+wire [C_RAM_ADDR_WIDTH-1  :0]SL_maxi_awlen                                  ;
+wire [  C_RAM_ADDR_WIDTH-1:0]SC_raddr                                       ;
+wire [C_M_AXI_DATA_WIDTH-1:0]SC_rdata                                       ;
+wire                         SC_rdata_ffen                                  ;
+reg  [C_M_AXI_DATA_WIDTH-1:0]SC_rdata_in                                    ;
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -283,6 +294,7 @@ end
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // process obuf 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+
 //calculate O_oraddr 
 always @(posedge I_clk)begin
     SC_cog_cnt_1d <= SC_cog_cnt      ;
@@ -410,7 +422,8 @@ generate
                 SC_bdata_m0_s2b[co_idx]     <= {SC_bdata_m0_s1b[co_idx] + {{(C_PRODUCTC-1){1'b0}},1'b1}}>>1     ; 
                 SC_bdata_m0_s3[co_idx]      <= SL_qn_more0 ? SC_bdata_m0_s2a[co_idx] : SC_bdata_m0_s2b[co_idx]  ;
                 SC_adata_pre[co_idx]        <= SC_bdata_m0_s3[co_idx] + I_qz3                                   ;
-                SC_adata_relu[co_idx]       <= $signed(SC_adata_pre[co_idx]) > 0 ? SC_adata_pre[co_idx] : 0     ; 
+                //SC_adata_relu[co_idx]       <= SC_adata_pre[co_idx][8] ? 0 : SC_adata_pre[co_idx]               ; 
+                SC_adata_relu[co_idx]       <= SC_adata_pre[co_idx]               ; 
             end
 
             always @(posedge I_clk)begin
@@ -574,10 +587,126 @@ u_loop4_wog_cnt(
 .O_cnt              (SC_wog_cnt             )//dly=0
 );
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// process axi_ram 
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// read data from qibuf 
-////////////////////////////////////////////////////////////////////////////////////////////////////
+assign SC_wr = SC_ndco_valid_1d ;
+
+always @(posedge I_clk)begin
+    SC_wdata    <= SC_iemem ;
+end
+
+always @(posedge I_clk)begin
+    if(SC_wr)begin
+        SC_waddr <= SC_waddr + {{(C_RAM_ADDR_WIDTH-1){1'b0}},1'b1}   ;
+    end
+    else begin
+        SC_waddr <= {{(C_RAM_ADDR_WIDTH-1){1'b0}},1'b0}              ;
+    end
+end
+
+sdpram #(
+    .C_MEM_STYLE    (C_MEM_STYLE        ), 
+    .C_DSIZE        (C_M_AXI_DATA_WIDTH ),
+    .C_ASIZE        (C_RAM_ADDR_WIDTH   ))
+u_axi_ram(
+    .I_wclk         (I_clk              ),
+    .I_waddr        (SC_waddr           ),
+    .I_wdata        (SC_wdata           ),
+    .I_wr           (SC_wr              ),
+    .I_ce           (1'b1               ),
+    .I_rclk         (I_clk              ),
+    .I_raddr        (SC_raddr           ),
+    .I_rd           (1'b1               ),
+    .O_rdata        (SC_rdata           )    
+);
+
+always @(posedge I_clk)begin
+    if(SC_ndco_valid && (~SC_ndco_valid_1d))begin
+        SC_axi_start    <= 1'b1         ;
+    end
+    else if(SC_axi_done)begin
+        SC_axi_start    <= 1'b0         ;
+    end
+    else begin
+        SC_axi_start    <= SC_axi_start ;
+    end
+end
+
+dsp_unit #(
+    .C_IN0          (C_DIM_WIDTH                ),
+    .C_IN1          (C_NCO_GROUP                ),
+    .C_IN2          (C_RAM_ADDR_WIDTH           ),
+    .C_OUT          (C_RAM_ADDR_WIDTH           ))
+u_opara_width_co_group(
+    .I_clk          (I_clk                      ),
+    .I_weight       (I_opara_width              ),
+    .I_pixel        (SL_co_group_1d             ),
+    .I_product_cas  ({C_RAM_ADDR_WIDTH{1'b0}}   ),
+    .O_product_cas  (                           ),
+    .O_product      (SL_opara_width_co_group    ) 
+);
+
+dsp_unit #(
+    .C_IN0          (C_RAM_ADDR_WIDTH           ),
+    .C_IN1          (C_DIM_WIDTH                ),
+    .C_IN2          (C_M_AXI_ADDR_WIDTH         ),
+    .C_OUT          (C_M_AXI_ADDR_WIDTH         ))
+u_ho_opara_width_co_group(
+    .I_clk          (I_clk                      ),
+    .I_weight       (SL_opara_width_co_group    ),
+    .I_pixel        (I_posthaddr                ),
+    .I_product_cas  ({C_M_AXI_ADDR_WIDTH{1'b0}} ),
+    .O_product_cas  (                           ),
+    .O_product      (SR_ho_opara_width_co_group ) 
+);
+
+always @(posedge I_clk)begin
+    SR_axi_base_addr <= I_base_addr + SR_ho_opara_width_co_group    ;
+end
+
+assign SL_maxi_awlen = SL_opara_width_co_group      ; 
+
+always @(posedge I_clk)begin
+    if(SC_rdata_ffen)begin
+        SC_rdata_in <= SC_rdata     ;
+    end
+    else begin
+        SC_rdata_in <= SC_rdata_in  ;
+    end
+end
+
+rambus2axibus #( 
+    .C_M_AXI_LEN_WIDTH      (C_M_AXI_LEN_WIDTH      ),
+    .C_M_AXI_ADDR_WIDTH     (C_M_AXI_ADDR_WIDTH     ),
+    .C_M_AXI_DATA_WIDTH     (C_M_AXI_DATA_WIDTH     ),
+    .C_RAM_ADDR_WIDTH       (C_RAM_ADDR_WIDTH       ), 
+    .C_RAM_DATA_WIDTH       (C_RAM_DATA_WIDTH       ),
+    .C_GET_RDATA_AFTER_NCLK (2                      ))///2 should be 2,3,4....
+u_rambus2axibus(
+    .I_clk           (I_clk             ),
+    .I_ap_start      (SC_axi_start      ),
+    .O_ap_done       (SC_axi_done       ),
+    .O_ap_idle       (                  ),
+    .O_ap_ready      (                  ),
+    .I_base_addr     (SR_axi_base_addr  ),
+    .I_len           (SL_maxi_awlen     ),
+    .O_raddr         (SC_raddr          ),
+    .O_rd            (                  ),
+    .O_rdata_ffen    (SC_rdata_ffen     ),
+    .I_rdata         (SC_rdata_in       ),///3clk after O_rd
+    .O_maxi_awlen    (O_maxi_awlen      ),
+    .I_maxi_awready  (I_maxi_awready    ),   
+    .O_maxi_awvalid  (O_maxi_awvalid    ),
+    .O_maxi_awaddr   (O_maxi_awaddr     ),
+    .I_maxi_wready   (I_maxi_wready     ),
+    .O_maxi_wvalid   (O_maxi_wvalid     ),
+    .O_maxi_wdata    (O_maxi_wdata      ),       
+    .I_maxi_bresp    (2'b0              ),
+    .I_maxi_bvalid   (I_maxi_bvalid     ),
+    .O_maxi_bready   (O_maxi_bready     )
+);
 
 endmodule
 

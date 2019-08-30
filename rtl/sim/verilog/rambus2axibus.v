@@ -166,21 +166,41 @@ always @(posedge I_clk)begin
     S_rcnt_en_shift <= {S_rcnt_en_shift[C_GET_RDATA_AFTER_NCLK-2:0],S_rcnt_en};
 end
 
-always @(posedge I_clk)begin
-    if(I_ap_start)begin
-        if(S_rcnt_en_shift[0] && (!S_rcnt_en))begin
-            S_rcnt_extend[C_RCNT_EXTEND_WIDTH-1:1] <= {(C_RCNT_EXTEND_WIDTH-1){1'b0}};
-            S_rcnt_extend[0] <= I_maxi_wready ;
-
+generate 
+    begin:rcnt_extend
+        if(C_RCNT_EXTEND_WIDTH >2 )begin:more2
+            always @(posedge I_clk)begin
+                if(I_ap_start)begin
+                    if(S_rcnt_en_shift[0] && (!S_rcnt_en))begin
+                        S_rcnt_extend[C_RCNT_EXTEND_WIDTH-1:1] <= {(C_RCNT_EXTEND_WIDTH-1){1'b0}};
+                        S_rcnt_extend[0] <= I_maxi_wready ;
+                    end
+                    else if(S_rcnt_extend_en && I_maxi_wready)begin
+                        S_rcnt_extend <= S_rcnt_extend + 1'b1; 
+                    end
+                end
+                else begin
+                    S_rcnt_extend <= {(C_RCNT_EXTEND_WIDTH){1'b0}};
+                end
+            end
         end
-        else if(S_rcnt_extend_en && I_maxi_wready)begin
-            S_rcnt_extend <= S_rcnt_extend + 1'b1; 
+        else begin:no_more2
+            always @(posedge I_clk)begin
+                if(I_ap_start)begin
+                    if(S_rcnt_en_shift[0] && (!S_rcnt_en))begin
+                        S_rcnt_extend[0] <= I_maxi_wready ;
+                    end
+                    else if(S_rcnt_extend_en && I_maxi_wready)begin
+                        S_rcnt_extend <= S_rcnt_extend + 1'b1; 
+                    end
+                end
+                else begin
+                    S_rcnt_extend <= {(C_RCNT_EXTEND_WIDTH){1'b0}};
+                end
+            end
         end
     end
-    else begin
-        S_rcnt_extend <= {(C_RCNT_EXTEND_WIDTH){1'b0}};
-    end
-end
+endgenerate
 
 always @(posedge I_clk)begin
     if(I_ap_start)begin
