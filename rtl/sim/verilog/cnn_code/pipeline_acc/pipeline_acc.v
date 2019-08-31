@@ -82,7 +82,7 @@ wire                            S_c3sum_p4_valid    ;
 reg                             S_c3sum_valid       ; 
 wire     [C_OUT-1            :0]S_m3sum             ;
 wire                            S_m3sum_p4_valid    ; 
-reg                             S_m3sum_valid       ; 
+wire                            S_m3sum_valid       ; 
 reg                             SL_equal1           ;
 reg                             SL_equal2           ;
 reg                             SL_equal3           ;

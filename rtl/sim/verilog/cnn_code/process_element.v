@@ -368,7 +368,8 @@ u_depth_cbuf_s3b(
     .I_clk          (I_clk                      ),
     .I_weight       (SL_co_group_1d             ),
     .I_pixel        (SC_cig_cnt                 ),
-    .I_product_cas  (SC_cog_cnt_2d              ),
+    //.I_product_cas  (SC_cog_cnt_2d              ),
+    .I_product_cas  (SC_cog_cnt_1d              ),
     .O_product_cas  (                           ),
     .O_product      (SC_depth_cbuf_s3b          )
 );
@@ -462,7 +463,8 @@ u_depth_pbuf(
     .I_clk          (I_clk                      ),
     .I_weight       (SL_kernel_ci_group         ),
     .I_pixel        (SC_wog_cnt                 ),
-    .I_product_cas  (SC_kw_cig_cnt_2d           ),
+    //.I_product_cas  (SC_kw_cig_cnt_2d           ),
+    .I_product_cas  (SC_kw_cig_cnt_1d           ),
     .O_product_cas  (                           ),
     .O_product      (SC_depth_pbuf              ) //dly=3
 );

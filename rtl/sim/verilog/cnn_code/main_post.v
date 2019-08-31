@@ -176,7 +176,11 @@ wire                         SC_wog_over_flag                               ;
 wire [  C_RAM_ADDR_WIDTH-1:0]SC_braddr_comb                                 ; 
 reg  [      C_BIAS_WIDTH-1:0]SC_bias[0:C_1ADOTS-1]                          ;//dly=4
 reg  [      C_BIAS_WIDTH-1:0]SC_bias_1d[0:C_1ADOTS-1]                       ;//dly=5
+wire [      C_BIAS_WIDTH-1:0]SC_bias_1d_wire[0:C_1ADOTS-1]                  ;//dly=6
 reg  [      C_BIAS_WIDTH-1:0]SC_bias_2d[0:C_1ADOTS-1]                       ;//dly=6
+wire [      C_BIAS_WIDTH-1:0]SC_bias_2d_wire[0:C_1ADOTS-1]                  ;//dly=6
+wire [        C_PRODUCTC-1:0]SC_bias_2d_wire_align[0:C_1ADOTS-1]            ;//dly=6
+
 wire [      C_BIAS_WIDTH-1:0]SC_bias_tmp[0:C_1ADOTS-1]                      ;//dly=7
 reg  [      C_BIAS_WIDTH-1:0]SC_bdata[0:C_1ADOTS-1]                         ;//dly=8
 wire [  C_RAM_ADDR_WIDTH-1:0]SC_depth_ipbuf                                 ; 
@@ -187,7 +191,7 @@ reg  [    C_LQOBUF_WIDTH-1:0]SC_qordata                                     ;//d
 reg  [     C_QOBUF_WIDTH-1:0]SC_qordata_split                               ;//dly=4
 reg  [        C_QN_WIDTH-1:0]SL_half_qn                                     ;
 reg                          SL_qn_more0                                    ;
-reg  [        C_PRODUCTC-1:0]SC_bdata_m0[0:C_1ADOTS-1]                      ;//dly=11
+wire [        C_PRODUCTC-1:0]SC_bdata_m0[0:C_1ADOTS-1]                      ;//dly=11
 reg  [        C_PRODUCTC-1:0]SC_bdata_m0_s1a[0:C_1ADOTS-1]                  ;//dly=12
 reg  [        C_PRODUCTC-1:0]SC_bdata_m0_s2a[0:C_1ADOTS-1]                  ;//dly=13
 reg  [        C_PRODUCTC-1:0]SC_bdata_m0_s1b[0:C_1ADOTS-1]                  ;//dly=12
@@ -309,7 +313,8 @@ u_depth_ipbuf(
     .I_clk          (I_clk                      ),
     .I_weight       (SL_co_group_1d             ),
     .I_pixel        (SC_wog_cnt                 ),
-    .I_product_cas  (SC_cog_cnt_2d              ),
+    //.I_product_cas  (SC_cog_cnt_2d              ),
+    .I_product_cas  (SC_cog_cnt_1d              ),
     .O_product_cas  (                           ),
     .O_product      (SC_depth_ipbuf             ) //dly=3
 );
@@ -438,7 +443,18 @@ generate
                 end
             end
 
-            assign SC_iemem[(co_idx+1)*C_DATA_WIDTH-1 : co_idx*C_DATA_WIDTH ] = SC_active_data[co_idx];
+            assign SC_iemem[(co_idx+1)*C_DATA_WIDTH-1 : co_idx*C_DATA_WIDTH ] = SC_active_data[co_idx]  ;
+
+            //assign SC_bias_2d_wire[co_idx] = $signed(0)-$signed(SC_bias_2d[co_idx])                     ;
+            assign SC_bias_1d_wire[co_idx] = $signed(0)-$signed(SC_bias_1d[co_idx])                     ;
+
+            //align #(
+            //    .C_IN_WIDTH (C_BIAS_WIDTH                   ),
+            //    .C_OUT_WIDTH(C_PRODUCTC                     ))
+            //u_bias_2d_wire_align(
+            //    .I_din      (SC_bias_2d_wire[co_idx]        ),
+            //    .O_dout     (SC_bias_2d_wire_align[co_idx]  )
+            //);
 
             dsp_unit #(
                 .C_IN0          (C_QZ2_WIDTH                                                ),
@@ -449,7 +465,8 @@ generate
                 .I_clk          (I_clk                                                      ),
                 .I_weight       (I_qz2                                                      ),
                 .I_pixel        (SC_qordata_split                                           ),//dly=4
-                .I_product_cas  (0-$signed(SC_bias_2d[co_idx])                              ),//dly=6
+                //.I_product_cas  (SC_bias_2d_wire[co_idx]                                    ),//dly=6
+                .I_product_cas  (SC_bias_1d_wire[co_idx]                                    ),//dly=6
                 .O_product_cas  (                                                           ),
                 .O_product      (SC_bias_tmp[co_idx]                                        ) //dly=7
             );

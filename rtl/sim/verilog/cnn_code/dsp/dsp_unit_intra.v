@@ -3,7 +3,7 @@
 //ZTE Company Confidential
 //--------------------------------------------------------------------------------------------------
 //Project Name : cnna
-//FILE NAME    : dsp_unit.v
+//FILE NAME    : dsp_unit_intra.v
 //AUTHOR       : qiu.chao 
 //Department   : Technical Planning Department/System Products/ZTE
 //Email        : qiu.chao@zte.com.cn
@@ -29,7 +29,7 @@
 //Critical Timing: none 
 //Asynchronous Interface: none 
 //END_HEADER----------------------------------------------------------------------------------------
-module dsp_unit #(
+module dsp_unit_intra #(
 parameter 
     C_IN0                    = 30        ,
     C_IN1                    = 18        ,
