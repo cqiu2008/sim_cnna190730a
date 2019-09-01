@@ -74,28 +74,29 @@ genvar ci_idx;
 
 generate
     begin:a1
-        assign S_pix[0]  = {10'd0,I_pix[(0+1)*C_DATA_WIDTH-1:0*C_DATA_WIDTH]}   ;
-        assign S_coeh[0] = I_coeh[(0+1)*C_DATA_WIDTH-1:0*C_DATA_WIDTH]          ;
-        assign S_coel[0] = I_coel[(0+1)*C_DATA_WIDTH-1:0*C_DATA_WIDTH]          ;
-        assign S_coe[0]  = {1'b0,S_coeh[0],10'b0,S_coel[0]}                     ;
-        always @(posedge I_clk)begin
-            S_ndcoe[ 0][0] <= S_coe[0]  ;
-            S_ndpix[ 0][0] <= S_pix[0]  ;
-        end
-        dsp_unit    #(
-            .C_IN0          (C_MULTIPLIERA          ),
-            .C_IN1          (C_MULTIPLIERB          ),
-            .C_IN2          (C_PRODUCTC             ),
-            .C_OUT          (C_PRODUCTC             ))
-        u_dsp_unit(
-            .I_clk          (I_clk                  ),
-            .I_weight       (S_ndcoe[0][0]          ),//
-            .I_pixel        (S_ndpix[0][0]          ),//
-            .I_product_cas  (S_product_cas[0]       ),//
-            .O_product_cas  (S_product_cas[0+1]     ),//
-            .O_product      (S_product[0]           )//
-        );
-        for(ci_idx=1;ci_idx<C_PECI;ci_idx=ci_idx+1)begin:ci
+        // assign S_pix[0]  = {10'd0,I_pix[(0+1)*C_DATA_WIDTH-1:0*C_DATA_WIDTH]}   ;
+        // assign S_coeh[0] = I_coeh[(0+1)*C_DATA_WIDTH-1:0*C_DATA_WIDTH]          ;
+        // assign S_coel[0] = I_coel[(0+1)*C_DATA_WIDTH-1:0*C_DATA_WIDTH]          ;
+        // assign S_coe[0]  = {1'b0,S_coeh[0],10'b0,S_coel[0]}                     ;
+        // always @(posedge I_clk)begin
+        //     S_ndcoe[ 0][0] <= S_coe[0]  ;
+        //     S_ndpix[ 0][0] <= S_pix[0]  ;
+        // end
+        // dsp_unit    #(
+        //     .C_IN0          (C_MULTIPLIERA          ),
+        //     .C_IN1          (C_MULTIPLIERB          ),
+        //     .C_IN2          (C_PRODUCTC             ),
+        //     .C_OUT          (C_PRODUCTC             ))
+        // u_dsp_unit(
+        //     .I_clk          (I_clk                  ),
+        //     .I_weight       (S_ndcoe[0][0]          ),//
+        //     .I_pixel        (S_ndpix[0][0]          ),//
+        //     .I_product_cas  (S_product_cas[0]       ),//
+        //     .O_product_cas  (                       ),//
+        //     .O_product      (S_product_cas[0+1]     )//
+        // );
+
+        for(ci_idx=0;ci_idx<C_PECI;ci_idx=ci_idx+1)begin:cil
             //assign S_pix[ci_idx]  = I_pix[ci_idx*C_DATA_WIDTH+:C_DATA_WIDTH]  ;
             assign S_pix[ci_idx]  = {10'd0,I_pix[(ci_idx+1)*C_DATA_WIDTH-1:ci_idx*C_DATA_WIDTH]};
             assign S_coeh[ci_idx] = I_coeh[(ci_idx+1)*C_DATA_WIDTH-1:ci_idx*C_DATA_WIDTH];
@@ -103,7 +104,7 @@ generate
                                     //b26, b25-b18        ,b17-b8,b7-b0
             assign S_coe[ci_idx]  = {1'b0,S_coeh[ci_idx],10'b0,S_coel[ci_idx]};
             always @(posedge I_clk)begin
-                //S_ndcoe[ 0][ci_idx] <= S_coe[ci_idx]       ;
+                S_ndcoe[ 0][ci_idx] <= S_coe[ci_idx]       ;
                 S_ndcoe[ 1][ci_idx] <= S_ndcoe[ 0][ci_idx] ;
                 S_ndcoe[ 2][ci_idx] <= S_ndcoe[ 1][ci_idx] ;
                 S_ndcoe[ 3][ci_idx] <= S_ndcoe[ 2][ci_idx] ;
@@ -119,6 +120,7 @@ generate
                 S_ndcoe[13][ci_idx] <= S_ndcoe[12][ci_idx] ;
                 S_ndcoe[14][ci_idx] <= S_ndcoe[13][ci_idx] ;
                 S_ndcoe[15][ci_idx] <= S_ndcoe[14][ci_idx] ;
+                S_ndpix[ 0][ci_idx] <= S_pix[ci_idx]  ;
                 S_ndpix[ 1][ci_idx] <= S_ndpix[ 0][ci_idx] ;
                 S_ndpix[ 2][ci_idx] <= S_ndpix[ 1][ci_idx] ;
                 S_ndpix[ 3][ci_idx] <= S_ndpix[ 2][ci_idx] ;
@@ -135,6 +137,23 @@ generate
                 S_ndpix[14][ci_idx] <= S_ndpix[13][ci_idx] ;
                 S_ndpix[15][ci_idx] <= S_ndpix[14][ci_idx] ;
             end
+        end
+
+        dsp_unit    #(
+            .C_IN0          (C_MULTIPLIERA          ),
+            .C_IN1          (C_MULTIPLIERB          ),
+            .C_IN2          (C_PRODUCTC             ),
+            .C_OUT          (C_PRODUCTC             ))
+        u_dsp_unit(
+            .I_clk          (I_clk                  ),
+            .I_weight       (S_ndcoe[0][0]          ),//
+            .I_pixel        (S_ndpix[0][0]          ),//
+            .I_product_cas  (S_product_cas[0]       ),//
+            .O_product_cas  (S_product_cas[0+1]     ),//
+            .O_product      (                       )//
+        );
+
+        for(ci_idx=1;ci_idx<C_PECI;ci_idx=ci_idx+1)begin:cic
             dsp_unit_intra #(
                 .C_IN0          (C_MULTIPLIERA          ),
                 .C_IN1          (C_MULTIPLIERB          ),

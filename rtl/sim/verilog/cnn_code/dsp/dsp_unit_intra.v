@@ -146,7 +146,7 @@ DSP48E2 #(
    .ACASCREG(1),                      // Number of pipeline stages between A/ACIN and ACOUT (0-2)
    .ADREG(1),                         // Pipeline stages for pre-adder (0-1)
    .ALUMODEREG(1),                    // Pipeline stages for ALUMODE (0-1)
-   .AREG(2),                          // Pipeline stages for A (0-2)
+   .AREG(1),                          // Pipeline stages for A (0-2)
    .BCASCREG(1),                      // Number of pipeline stages between B/BCIN and BCOUT (0-2)
    .BREG(1),                          // Pipeline stages for B (0-2)
    .CARRYINREG(1),                    // Pipeline stages for CARRYIN (0-1)

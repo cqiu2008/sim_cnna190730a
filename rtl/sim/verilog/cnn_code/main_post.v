@@ -157,6 +157,7 @@ reg  [                   3:0]SR_ndap_start_shift                            ;
 wire [     C_COCNT_WIDTH-1:0]SC_co_cnt                                      ;
 reg                          SC_co_valid                                    ;//dly=0
 reg  [     C_COCNT_WIDTH-1:0]SL_co_loop                                     ;
+wire [     C_COCNT_WIDTH-1:0]SC_ndco_cnt                                    ;//dly=7
 wire                         SC_ndco_valid                                  ;//dly=17
 reg                          SC_ndco_valid_1d                               ;//dly=18
 wire                         SC_co_over_flag                                ; 
@@ -186,7 +187,8 @@ reg  [      C_BIAS_WIDTH-1:0]SC_bdata[0:C_1ADOTS-1]                         ;//d
 wire [  C_RAM_ADDR_WIDTH-1:0]SC_depth_ipbuf                                 ; 
 reg  [     C_LOBUF_WIDTH-1:0]SC_ordata                                      ;//dly=7
 wire [      C_OBUF_WIDTH-1:0]SC_ipbuf_array[0:C_PEPIX-1][0:C_PECO-1]        ;//dly=7
-reg  [      C_OBUF_WIDTH-1:0]SC_ipbuf[0:C_PECO-1]                           ; 
+reg  [      C_OBUF_WIDTH-1:0]SC_ipbuf_peco[0:C_PECO-1]                      ; 
+wire [      C_OBUF_WIDTH-1:0]SC_ipbuf[0:C_1ADOTS-1]                         ;
 reg  [    C_LQOBUF_WIDTH-1:0]SC_qordata                                     ;//dly=4
 reg  [     C_QOBUF_WIDTH-1:0]SC_qordata_split                               ;//dly=4
 reg  [        C_QN_WIDTH-1:0]SL_half_qn                                     ;
@@ -340,21 +342,39 @@ endgenerate
 
 genvar gco_idx;
 generate
-    begin:ipbuf
+    begin:ipbuf_peco
         for(gco_idx=0;gco_idx<C_PECO;gco_idx=gco_idx+1)begin:co
             always @(*)begin
                 case(SC_ndpix_cnt[2:0])//dly=7
-                3'b000: SC_ipbuf[gco_idx] = SC_ipbuf_array[0][gco_idx];
-                3'b001: SC_ipbuf[gco_idx] = SC_ipbuf_array[1][gco_idx];
-                3'b010: SC_ipbuf[gco_idx] = SC_ipbuf_array[2][gco_idx];
-                3'b011: SC_ipbuf[gco_idx] = SC_ipbuf_array[3][gco_idx];
-                3'b100: SC_ipbuf[gco_idx] = SC_ipbuf_array[4][gco_idx];
-                3'b101: SC_ipbuf[gco_idx] = SC_ipbuf_array[5][gco_idx];
-                3'b110: SC_ipbuf[gco_idx] = SC_ipbuf_array[6][gco_idx];
-                3'b111: SC_ipbuf[gco_idx] = SC_ipbuf_array[7][gco_idx];
-                default:SC_ipbuf[gco_idx] = {C_OBUF_WIDTH{1'b0}}      ;
+                3'b000: SC_ipbuf_peco[gco_idx] = SC_ipbuf_array[0][gco_idx];
+                3'b001: SC_ipbuf_peco[gco_idx] = SC_ipbuf_array[1][gco_idx];
+                3'b010: SC_ipbuf_peco[gco_idx] = SC_ipbuf_array[2][gco_idx];
+                3'b011: SC_ipbuf_peco[gco_idx] = SC_ipbuf_array[3][gco_idx];
+                3'b100: SC_ipbuf_peco[gco_idx] = SC_ipbuf_array[4][gco_idx];
+                3'b101: SC_ipbuf_peco[gco_idx] = SC_ipbuf_array[5][gco_idx];
+                3'b110: SC_ipbuf_peco[gco_idx] = SC_ipbuf_array[6][gco_idx];
+                3'b111: SC_ipbuf_peco[gco_idx] = SC_ipbuf_array[7][gco_idx];
+                default:SC_ipbuf_peco[gco_idx] = {C_OBUF_WIDTH{1'b0}}      ;
                 endcase
             end
+        end
+    end
+endgenerate
+
+dly #(
+    .C_DATA_WIDTH   (C_COCNT_WIDTH  ), 
+    .C_DLY_NUM      (7              ))
+u_ndco_cnt(
+    .I_clk     (I_clk               ),
+    .I_din     (SC_co_cnt           ),
+    .O_dout    (SC_ndco_cnt         ) //dly=7
+);
+
+genvar nco_idx;
+generate
+    begin:ipbuf
+        for(nco_idx=0;nco_idx<C_1ADOTS;nco_idx=nco_idx+1)begin:co
+            assign SC_ipbuf[nco_idx] = SC_ndco_cnt[0] ? SC_ipbuf_peco[nco_idx+C_1ADOTS] : SC_ipbuf_peco[nco_idx]  ;
         end
     end
 endgenerate
