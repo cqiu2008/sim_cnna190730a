@@ -755,5 +755,17 @@ u_rambus2axibus(
     .O_maxi_bready   (O_maxi_bready     )
 );
 
+/////---------------------------------------------------------
+///// debug	begin
+/////---------------------------------------------------------
+// (* MARK_DEBUG="true" *) reg  [  2:0] rdbg_O_app_cmd				;///input
+// (* MARK_DEBUG="true" *) reg  	     rdbg_O_app_en				;///input
+// (* MARK_DEBUG="true" *) reg  [  7:0] rdbg_O_app_addr			;///input
+// (* MARK_DEBUG="true" *) reg  	     rdbg_I_app_rdy				;///output
+// (* MARK_DEBUG="true" *) reg  	     rdbg_O_app_wdf_wren		;///input
+/////---------------------------------------------------------
+///// debug	end
+/////---------------------------------------------------------
+
 endmodule
 
