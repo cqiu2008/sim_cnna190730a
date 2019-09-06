@@ -39,5 +39,6 @@ set depth_list {
 {layer_poolPara_kernel_w_V 1}
 {layer_poolPara_stride_h_V 1}
 {layer_poolPara_stride_w_V 1}
+{layer_poolPara_pool_type 1}
 }
 set trans_num 1

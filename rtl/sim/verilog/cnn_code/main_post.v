@@ -375,7 +375,7 @@ generate
     begin:ipbuf
         for(nco_idx=0;nco_idx<C_1ADOTS;nco_idx=nco_idx+1)begin:co
             assign SC_ipbuf[nco_idx] = SC_ndco_cnt[0] ? SC_ipbuf_peco[nco_idx+C_1ADOTS] : SC_ipbuf_peco[nco_idx]  ;
-        end
+        end 
     end
 endgenerate
 
@@ -724,6 +724,42 @@ always @(posedge I_clk)begin
     end
 end
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// debug begin
+(* MARK_DEBUG="true" *)reg  [C_M_AXI_ADDR_WIDTH-1:0]dbgmp_I_base_addr         ; 
+(* MARK_DEBUG="true" *)reg                          dbgmp_SC_axi_start        ;
+(* MARK_DEBUG="true" *)reg                          dbgmp_SC_axi_done         ;
+(* MARK_DEBUG="true" *)reg  [C_M_AXI_ADDR_WIDTH-1:0]dbgmp_SR_axi_base_addr    ; 
+(* MARK_DEBUG="true" *)reg  [  C_RAM_ADDR_WIDTH-1:0]dbgmp_SC_raddr            ;
+(* MARK_DEBUG="true" *)reg  [C_M_AXI_LEN_WIDTH-1 :0]dbgmp_O_maxi_awlen        ;
+(* MARK_DEBUG="true" *)reg                          dbgmp_I_maxi_awready      ;   
+(* MARK_DEBUG="true" *)reg                          dbgmp_O_maxi_awvalid      ;
+(* MARK_DEBUG="true" *)reg  [C_M_AXI_ADDR_WIDTH-1:0]dbgmp_O_maxi_awaddr       ;
+(* MARK_DEBUG="true" *)reg                          dbgmp_I_maxi_wready       ;
+(* MARK_DEBUG="true" *)reg                          dbgmp_O_maxi_wvalid       ;
+(* MARK_DEBUG="true" *)reg  [C_M_AXI_DATA_WIDTH-1:0]dbgmp_O_maxi_wdata        ;       
+(* MARK_DEBUG="true" *)reg                          dbgmp_I_maxi_bvalid       ;
+(* MARK_DEBUG="true" *)reg                          dbgmp_O_maxi_bready       ;   
+always @(posedge I_clk)begin
+    dbgmp_I_base_addr         <= I_base_addr            ; 
+    dbgmp_SC_axi_start        <= SC_axi_start           ;
+    dbgmp_SC_axi_done         <= SC_axi_done            ;
+    dbgmp_SR_axi_base_addr    <= SR_axi_base_addr       ; 
+    dbgmp_SC_raddr            <= SC_raddr               ;
+    dbgmp_O_maxi_awlen        <= O_maxi_awlen           ;
+    dbgmp_I_maxi_awready      <= I_maxi_awready         ;   
+    dbgmp_O_maxi_awvalid      <= O_maxi_awvalid         ;
+    dbgmp_O_maxi_awaddr       <= O_maxi_awaddr          ;
+    dbgmp_I_maxi_wready       <= I_maxi_wready          ;
+    dbgmp_O_maxi_wvalid       <= O_maxi_wvalid          ;
+    dbgmp_O_maxi_wdata        <= O_maxi_wdata           ;       
+    dbgmp_I_maxi_bvalid       <= I_maxi_bvalid          ;
+    dbgmp_O_maxi_bready       <= O_maxi_bready          ;   
+end
+// debug end
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 rambus2axibus #( 
     .C_M_AXI_LEN_WIDTH      (C_M_AXI_LEN_WIDTH      ),
     .C_M_AXI_ADDR_WIDTH     (C_M_AXI_ADDR_WIDTH     ),
@@ -754,18 +790,6 @@ u_rambus2axibus(
     .I_maxi_bvalid   (I_maxi_bvalid     ),
     .O_maxi_bready   (O_maxi_bready     )
 );
-
-/////---------------------------------------------------------
-///// debug	begin
-/////---------------------------------------------------------
-// (* MARK_DEBUG="true" *) reg  [  2:0] rdbg_O_app_cmd				;///input
-// (* MARK_DEBUG="true" *) reg  	     rdbg_O_app_en				;///input
-// (* MARK_DEBUG="true" *) reg  [  7:0] rdbg_O_app_addr			;///input
-// (* MARK_DEBUG="true" *) reg  	     rdbg_I_app_rdy				;///output
-// (* MARK_DEBUG="true" *) reg  	     rdbg_O_app_wdf_wren		;///input
-/////---------------------------------------------------------
-///// debug	end
-/////---------------------------------------------------------
 
 endmodule
 
